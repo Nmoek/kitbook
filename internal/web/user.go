@@ -4,6 +4,8 @@ import (
 	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
+	"kitbook/internal/domain"
+	"kitbook/internal/service"
 	"net/http"
 )
 
@@ -17,6 +19,7 @@ const (
 type UserHandler struct {
 	emailRegExp    *regexp.Regexp
 	passwordRegExp *regexp.Regexp
+	svc            *service.UserService
 }
 
 // @func: NewUserHandler
@@ -24,10 +27,11 @@ type UserHandler struct {
 // @brief: 创建用户模块句柄
 // @author: Kewin Li
 // @return *UserHandler
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
+		svc:            svc,
 	}
 }
 
@@ -132,6 +136,15 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 
 	//TODO: 写注册信息到数据库
+	err = h.svc.Signup(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误！")
+		return
+	}
 
 	ctx.String(http.StatusOK, "注册成功! ")
 

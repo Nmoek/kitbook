@@ -1,20 +1,57 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"kitbook/internal/repository"
+	"kitbook/internal/repository/dao"
+	"kitbook/internal/service"
 	"kitbook/internal/web"
 	"strings"
 	"time"
 )
 
 func main() {
-	//user := &web.UserHandler{}
-	user := web.NewUserHandler()
+
+	db := initDB()
+	server := initWebServer()
+
+	initUserHandler(db, server)
+
+	err := server.Run(":8080")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func initUserHandler(db *gorm.DB, server *gin.Engine) {
+	d := dao.NewUserDao(db)
+	repo := repository.NewUserRepository(d)
+	svc := service.NewUserService(repo)
+	user := web.NewUserHandler(svc)
+	user.UserRegisterRoutes(server)
+}
+
+func initDB() *gorm.DB {
+	dsn := "root:root@tcp(127.0.0.1:13316)/kitbook?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+
+	err = dao.InitTables(db)
+	if err != nil {
+		panic(err)
+	}
+
+	return db
+}
+
+func initWebServer() *gin.Engine {
 	server := gin.Default()
 
-	// TODO: 跨域问题？搁置，后续再看
 	// !middleware注册
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true, //是否允许cookie
@@ -31,10 +68,5 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	user.UserRegisterRoutes(server)
-
-	err := server.Run(":8080")
-	if err != nil {
-		fmt.Printf("server fun err! %s", err)
-	}
+	return server
 }
