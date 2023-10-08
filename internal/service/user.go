@@ -2,9 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 )
+
+var ErrDuplicateEmail = repository.ErrDuplicateEmail
 
 type UserService struct {
 	repo *repository.UserRepository //一个服务只会有一个repository
@@ -31,5 +35,13 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 // @param user
 // @return error
 func (svc *UserService) Signup(ctx context.Context, user domain.User) error {
+	// 加密服务
+	cryptPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("crypt password %s \n", cryptPassword)
+	user.Password = string(cryptPassword)
 	return svc.repo.Create(ctx, user)
 }

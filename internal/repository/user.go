@@ -6,6 +6,8 @@ import (
 	"kitbook/internal/repository/dao"
 )
 
+var ErrDuplicateEmail = dao.ErrDuplicateEmail
+
 type UserRepository struct {
 	dao *dao.UserDao
 }
@@ -28,4 +30,5 @@ func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
 		Email:    u.Email,
 		Password: u.Password,
 	})
+
 }

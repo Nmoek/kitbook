@@ -141,12 +141,14 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		Password: req.Password,
 	})
 
-	if err != nil {
-		ctx.String(http.StatusOK, "系统错误！")
-		return
+	switch err {
+	case nil:
+		ctx.String(http.StatusOK, "注册成功！")
+	case service.ErrDuplicateEmail:
+		ctx.String(http.StatusOK, "%s", service.ErrDuplicateEmail)
+	default:
+		ctx.String(http.StatusOK, "系统错误!")
 	}
-
-	ctx.String(http.StatusOK, "注册成功! ")
 
 }
 
