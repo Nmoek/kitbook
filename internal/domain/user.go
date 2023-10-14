@@ -1,14 +1,16 @@
 package domain
 
+import "time"
+
 type User struct {
+	Id       int64
 	Email    string
 	Password string
+	Nickname string
+	Birthday time.Time
+	AboutMe  string
+	Ctime    time.Time
 }
 
-//func (u *User) ValidateEmail() bool {
+//let p: Profile = {Email: "", Phone: "", Nickname: "", Birthday:"", AboutMe: ""}
 //
-//}
-//
-//func (u *User) ValidatePassWord() bool {
-//
-//}

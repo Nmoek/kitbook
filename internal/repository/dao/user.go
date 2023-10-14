@@ -8,7 +8,10 @@ import (
 	"time"
 )
 
-var ErrDuplicateEmail = errors.New("邮箱已经被注册!")
+var (
+	ErrDuplicateEmail = errors.New("邮箱已经被注册!")
+	ErrRecordNotFound = gorm.ErrRecordNotFound
+)
 
 type UserDao struct {
 	db *gorm.DB
@@ -44,12 +47,62 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	return err
 }
 
+// @func: FindByEmail
+// @date: 2023-10-09 02:02:09
+// @brief: 数据库查询操作-按邮箱
+// @author: Kewin Li
+// @receiver dao
+// @param ctx
+// @param email
+func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error) {
+
+	findUser := User{}
+	err := dao.db.Where("email = ?", email).First(&findUser).Error
+	return findUser, err
+}
+
+// @func: FindByID
+// @date: 2023-10-12 04:06:06
+// @brief: 数据库查询操作-按ID
+// @author: Kewin Li
+// @receiver dao
+// @param ctx
+// @param id
+// @return error
+func (dao *UserDao) FindByID(ctx context.Context, id int64) (User, error) {
+	findUser := User{}
+	err := dao.db.Where("id = ?", id).First(&findUser).Error
+	return findUser, err
+}
+
+// @func: UpdateById
+// @date: 2023-10-13 01:41:54
+// @brief: 数据库更新操作-按ID
+// @author: Kewin Li
+// @receiver dao
+// @param ctx
+// @param user
+// @return error
+func (dao *UserDao) UpdateById(ctx context.Context, user User) error {
+	return dao.db.WithContext(ctx).Model(&user).Where("id = ?", user.Id).Updates(
+		map[string]interface{}{
+			"id":       user.Id,
+			"nickname": user.Nickname,
+			"birthday": user.Birthday,
+			"about_me": user.AboutMe,
+			"utime":    time.Now().UnixMilli(),
+		}).Error
+}
+
 // User
-// @Description: 表结构定义
+// @Description: 用户表结构定义
 type User struct {
 	Id       int64  `gorm:"primaryKey, autoIncrement"`
 	Email    string `gorm:"unique"`
 	Password string
+	Nickname string `gorm:"type=varchar(128)"`
+	Birthday int64
+	AboutMe  string `gorm:"type=varchar(4096)"`
 	Ctime    int64
 	Utime    int64
 }

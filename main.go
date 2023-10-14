@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -9,6 +11,7 @@ import (
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"kitbook/internal/web"
+	"kitbook/internal/web/middlewares/login"
 	"strings"
 	"time"
 )
@@ -67,6 +70,14 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
+	//初始化seesion
+	loginMiddleware := login.MiddlewareBuilder{}
+	store := cookie.NewStore([]byte("secret"))
+
+	// TODO: seesionID直接放入了cookie, 这样不安全但简单起见先这么处理
+	//加入登录校验middleware
+	server.Use(sessions.Sessions("sessionID", store), loginMiddleware.CheckLogin())
 
 	return server
 }
