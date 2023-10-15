@@ -90,7 +90,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	switch err {
 	case nil:
 		session := sessions.Default(ctx)
-		session.Set("sessionID", user.Id)
+		session.Set("userID", user.Id)
 		session.Options(sessions.Options{
 			HttpOnly: true,
 			Secure:   true,
@@ -213,12 +213,12 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 
 	// 通过sessionID拿到是哪一个用户
 	session := sessions.Default(ctx)
-	if session.Get("sessionID") == nil {
+	if session.Get("userID") == nil {
 		// 中断
 		ctx.AbortWithStatus(http.StatusNonAuthoritativeInfo)
 		return
 	}
-	sessionID := session.Get("sessionID").(int64)
+	userID := session.Get("userID").(int64)
 
 	birthday, err := time.Parse(time.DateOnly, req.Birthday)
 	if err != nil {
@@ -227,7 +227,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	err = h.svc.Edit(ctx, domain.User{
-		Id:       sessionID,
+		Id:       userID,
 		Nickname: req.Nickname,
 		Birthday: birthday,
 		AboutMe:  req.AboutMe,
@@ -261,14 +261,14 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	// 1. 用户ID
 	session := sessions.Default(ctx)
 
-	if session.Get("sessionID") == nil {
+	if session.Get("userID") == nil {
 		ctx.AbortWithStatus(http.StatusNonAuthoritativeInfo)
 		return
 	}
 
-	sessionID := session.Get("sessionID").(int64)
+	userID := session.Get("userID").(int64)
 
-	user, err := h.svc.Profile(ctx, sessionID)
+	user, err := h.svc.Profile(ctx, userID)
 
 	switch err {
 	case nil:
@@ -284,6 +284,4 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	default:
 		ctx.String(http.StatusOK, "系统错误！")
 	}
-
-	//ctx.String(http.StatusOK, "查看用户信息!")
 }

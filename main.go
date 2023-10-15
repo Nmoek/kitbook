@@ -77,7 +77,8 @@ func initWebServer() *gin.Engine {
 
 	// TODO: seesionID直接放入了cookie, 这样不安全但简单起见先这么处理
 	//加入登录校验middleware
-	server.Use(sessions.Sessions("sessionID", store), loginMiddleware.CheckLogin())
+	// 注意区分: 连接层sessionID 与 业务层userID
+	server.Use(sessions.Sessions("userID", store), loginMiddleware.CheckLogin())
 
 	return server
 }

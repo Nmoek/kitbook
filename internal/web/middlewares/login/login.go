@@ -28,7 +28,7 @@ func (builder *MiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		}
 
 		session := sessions.Default(ctx)
-		if session.Get("sessionID") == nil {
+		if session.Get("userID") == nil {
 			// 中断
 			ctx.AbortWithStatus(http.StatusNonAuthoritativeInfo)
 			return

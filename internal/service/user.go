@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
@@ -101,7 +100,7 @@ func (svc *UserService) Edit(ctx context.Context, user domain.User) error {
 // @param id
 // @return interface{}
 // @return interface{}
-func (svc *UserService) Profile(ctx *gin.Context, id int64) (domain.User, error) {
+func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
 
 	return svc.repo.FindByID(ctx, id)
 
