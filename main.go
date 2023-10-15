@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -12,6 +13,7 @@ import (
 	"kitbook/internal/service"
 	"kitbook/internal/web"
 	"kitbook/internal/web/middlewares/login"
+	"os"
 	"strings"
 	"time"
 )
@@ -73,7 +75,24 @@ func initWebServer() *gin.Engine {
 
 	//初始化seesion
 	loginMiddleware := login.MiddlewareBuilder{}
-	store := cookie.NewStore([]byte("secret"))
+
+	// 1. 使用cookie存储session
+	//store := cookie.NewStore([]byte("secret"))
+
+	// 2. 使用memstore存储session; 第一个密钥用于身份认证, 第二个密钥用于数据加解密
+	//store := memstore.NewStore([]byte("tHaegpgS1uxjmH3E9suduGmXECFm7CEk"), []byte("s6AjedURwVItfEsrhKS4QKvAUnRWJCcL"))
+
+	// 3. 使用redis存储session
+	store, err := redis.NewStore(10, "tcp", "localhost:6379", "",
+		[]byte("tHaegpgS1uxjmH3E9suduGmXECFm7CEk"),
+		[]byte("s6AjedURwVItfEsrhKS4QKvAUnRWJCcL"))
+
+	// 4. 其他的store介质
+
+	if err != nil {
+		fmt.Printf("redis store err! %s \n", err)
+		os.Exit(-1)
+	}
 
 	// TODO: seesionID直接放入了cookie, 这样不安全但简单起见先这么处理
 	//加入登录校验middleware
