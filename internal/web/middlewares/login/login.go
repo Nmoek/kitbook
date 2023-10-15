@@ -3,9 +3,12 @@
 package login
 
 import (
+	"encoding/gob"
+	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type MiddlewareBuilder struct {
@@ -27,11 +30,32 @@ func (builder *MiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
+		// !! 坑点：Gin中session键值对设定是覆盖式的，需要重新赋值一遍不相关字段
 		session := sessions.Default(ctx)
-		if session.Get("userID") == nil {
+		userID := session.Get("userID")
+		if userID == nil {
 			// 中断
 			ctx.AbortWithStatus(http.StatusNonAuthoritativeInfo)
 			return
+		}
+
+		// session超时时间刷新
+		nowTime := time.Now()
+		val := session.Get("update_time")
+		lastUpdateTime, ok := val.(time.Time)
+		if val == nil || !ok || nowTime.Sub(lastUpdateTime) > time.Minute {
+
+			// 对该结构体注册进行序列化
+			gob.Register(time.Now())
+			// TODO: 键值对赋值需要优化
+			session.Set("userID", userID)
+
+			//坑点: Gin中没有对redis的键值对设置进行字节序列化
+			session.Set("update_time", nowTime)
+
+			if err := session.Save(); err != nil {
+				fmt.Printf("gin session kv param save err! %s \n", err)
+			}
 		}
 
 	}
