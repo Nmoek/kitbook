@@ -43,15 +43,21 @@ func (builder *MiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		nowTime := time.Now()
 		val := session.Get("update_time")
 		lastUpdateTime, ok := val.(time.Time)
-		if val == nil || !ok || nowTime.Sub(lastUpdateTime) > time.Minute {
+		if val == nil || !ok || nowTime.Sub(lastUpdateTime) > 1*time.Minute {
 
 			// 对该结构体注册进行序列化
 			gob.Register(time.Now())
 			// TODO: 键值对赋值需要优化
 			session.Set("userID", userID)
 
-			//坑点: Gin中没有对redis的键值对设置进行字节序列化
+			//坑点1: Gin中没有对redis的键值对设置进行字节序列化
+			//坑点2: 每一次都需要重新设置键值对，会被覆盖
 			session.Set("update_time", nowTime)
+			session.Options(sessions.Options{
+				HttpOnly: true,
+				Secure:   true,
+				MaxAge:   900, //15min
+			})
 
 			if err := session.Save(); err != nil {
 				fmt.Printf("gin session kv param save err! %s \n", err)
