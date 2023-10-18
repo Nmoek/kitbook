@@ -67,6 +67,13 @@ func (builder *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
+		userAgent := ctx.GetHeader("User-Agent")
+		if userAgent == "" || userAgent != claims.UserAgent {
+			//TODO: 1. 后续讲到监控警告设计时，这里还有"埋点"操作。2. 这里可以替换为检测浏览器指纹
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		//token是否即将过期, 是则要刷新
 		//通过token中的exp time 去倒计时判断
 		if claims.ExpiresAt.Sub(time.Now()) < 1*time.Minute {

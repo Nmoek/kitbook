@@ -152,7 +152,8 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 
 		// 设置JWT
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaims{
-			UserID: user.Id,
+			UserID:    user.Id,
+			UserAgent: ctx.GetHeader("User-Agent"),
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
 			},
@@ -346,7 +347,6 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Profile userID: %v \n", userID)
 	user, err := h.svc.Profile(ctx, userID)
 
 	switch err {
@@ -367,5 +367,6 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UserID int64
+	UserID    int64
+	UserAgent string
 }
