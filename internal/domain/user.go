@@ -11,6 +11,3 @@ type User struct {
 	AboutMe  string
 	Ctime    time.Time
 }
-
-//let p: Profile = {Email: "", Phone: "", Nickname: "", Birthday:"", AboutMe: ""}
-//

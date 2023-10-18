@@ -5,6 +5,7 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
 	"net/http"
@@ -17,6 +18,8 @@ const (
 	//长度大于8位小于16位，大小写密码组合，不包含特殊字符的密码校验
 	passwordRegexPattern = "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,16}$"
 )
+
+const TokenPrivateKey = "kAEpRBDAb1PlhOHdpHYelwdNIsjmJ5C5"
 
 type UserHandler struct {
 	emailRegExp    *regexp.Regexp
@@ -46,10 +49,11 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 func (h *UserHandler) UserRegisterRoutes(server *gin.Engine) {
 	// 注册、登录等功能对应的URL(路由规则)
 	group := server.Group("/users")
-	group.GET("/profile", h.Profile) //查询用户信息
-	group.POST("/login", h.Login)    //登录
-	group.POST("/signup", h.SignUp)  //注册
-	group.POST("/edit", h.Edit)      //修改个人信息
+	group.GET("/profile", h.Profile)     //查询用户信息
+	group.POST("/login", h.LoginWithJWT) //JWT登录
+	//group.POST("/login", h.Login)    //登录
+	group.POST("/signup", h.SignUp) //注册
+	group.POST("/edit", h.Edit)     //修改个人信息
 }
 
 // @func: Login
@@ -108,6 +112,68 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "用户名或密码不正确!")
 	default:
 		ctx.String(http.StatusOK, "系统错误")
+	}
+
+}
+
+// @func: LoginWithJWT
+// @date: 2023-10-16 18:55:54
+// @brief: 用户模块-登录通过JWT方式
+// @author: Kewin Li
+// @receiver h
+// @param context
+func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
+
+	type UserReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req UserReq
+	if err := ctx.Bind(&req); err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+
+	isValid, err := h.emailRegExp.MatchString(req.Email)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+
+	if !isValid {
+		ctx.String(http.StatusOK, "邮箱格式错误！[xxx@qq.com]")
+		return
+	}
+
+	user, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+
+		// 设置JWT
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaims{
+			UserID: user.Id,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
+			},
+		})
+
+		tokenStr, err := token.SignedString([]byte(TokenPrivateKey))
+		if err != nil {
+			ctx.String(http.StatusOK, "系统错误!")
+			return
+		}
+
+		fmt.Printf("login tokenStr: %s \n", tokenStr)
+
+		ctx.Header("x-jwt-token", tokenStr)
+
+		ctx.String(http.StatusOK, "登录成功!")
+
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "用户名或密码错误!")
+	default:
+		ctx.String(http.StatusOK, "系统错误!")
 	}
 
 }
@@ -188,6 +254,25 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 
 }
 
+func checkBySession(ctx *gin.Context) int64 {
+	// 通过sessionID拿到是哪一个用户
+	session := sessions.Default(ctx)
+	if session.Get("userID") == nil {
+		return -1
+	}
+	return session.Get("userID").(int64)
+}
+
+func checkByJWT(ctx *gin.Context) int64 {
+	val := ctx.MustGet("user_token")
+	if val == nil {
+		return -1
+	}
+	claims := val.(UserClaims)
+	return claims.UserID
+
+}
+
 // @func: Edit
 // @date: 2023-10-12 03:31:51
 // @brief: 用户模块-修改个人信息
@@ -210,15 +295,12 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 
 	//1. 数据校验
 	//2. 如何查询当前修改信息的用户是谁?
-
-	// 通过sessionID拿到是哪一个用户
-	session := sessions.Default(ctx)
-	if session.Get("userID") == nil {
-		// 中断
-		ctx.AbortWithStatus(http.StatusNonAuthoritativeInfo)
+	//userID := checkBySession(ctx)
+	userID := checkByJWT(ctx)
+	if userID < 0 {
+		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
-	userID := session.Get("userID").(int64)
 
 	birthday, err := time.Parse(time.DateOnly, req.Birthday)
 	if err != nil {
@@ -259,15 +341,14 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	}
 
 	// 1. 用户ID
-	session := sessions.Default(ctx)
-
-	if session.Get("userID") == nil {
-		ctx.AbortWithStatus(http.StatusNonAuthoritativeInfo)
+	//userID := checkBySession(ctx)
+	userID := checkByJWT(ctx)
+	if userID < 0 {
+		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
 
-	userID := session.Get("userID").(int64)
-
+	fmt.Printf("Profile userID: %v \n", userID)
 	user, err := h.svc.Profile(ctx, userID)
 
 	switch err {
@@ -284,4 +365,9 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	default:
 		ctx.String(http.StatusOK, "系统错误！")
 	}
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	UserID int64
 }

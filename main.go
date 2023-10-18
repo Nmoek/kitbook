@@ -61,6 +61,7 @@ func initWebServer() *gin.Engine {
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true, //是否允许cookie
 		AllowHeaders:     []string{"Content-Type", "authorization"},
+		ExposeHeaders:    []string{"x-jwt-token"}, //允许外部访问后端的头部字段
 		//AllowOrigins:     []string{"http://localhost:3000"},  //单独枚举指定
 		AllowOriginFunc: func(origin string) bool {
 			// 允许本机调试
@@ -73,8 +74,16 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	//userSession(server)
+	userJWT(server)
+
+	return server
+}
+
+func userSession(server *gin.Engine) {
+
 	//初始化seesion
-	loginMiddleware := login.MiddlewareBuilder{}
+	loginMiddleware := login.LoginMiddlewareBuilder{}
 
 	// 1. 使用cookie存储session
 	//store := cookie.NewStore([]byte("secret"))
@@ -99,5 +108,10 @@ func initWebServer() *gin.Engine {
 	// 注意区分: 连接层sessionID 与 业务层userID
 	server.Use(sessions.Sessions("sessionID", store), loginMiddleware.CheckLogin())
 
-	return server
+}
+
+func userJWT(server *gin.Engine) {
+	jwtMiddlewareBuilder := login.LoginJWTMiddlewareBuilder{}
+
+	server.Use(jwtMiddlewareBuilder.CheckLogin())
 }

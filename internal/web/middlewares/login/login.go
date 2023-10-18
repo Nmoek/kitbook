@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type MiddlewareBuilder struct {
+type LoginMiddlewareBuilder struct {
 }
 
 // @func: Build
@@ -20,7 +20,7 @@ type MiddlewareBuilder struct {
 // @author: Kewin Li
 // @receiver builder
 // @return gin.HandlerFunc
-func (builder *MiddlewareBuilder) CheckLogin() gin.HandlerFunc {
+func (builder *LoginMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		//注册、登录操作不能进行登录校验
