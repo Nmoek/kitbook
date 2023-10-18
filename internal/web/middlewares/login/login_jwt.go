@@ -48,8 +48,6 @@ func (builder *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 
 		tokenStr := segs[1]
 
-		fmt.Printf("CheckLogin tokenStr: %s \n", tokenStr)
-
 		var claims web.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
 			// 可以根据一些条件动态计算key, 练习方便起见使用了固定key
@@ -79,8 +77,6 @@ func (builder *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			if err != nil {
 				fmt.Printf("token SignedString err! %s \n", err)
 			}
-
-			fmt.Printf("[%d] new tokenStr: %s \n", claims.UserID, tokenStr)
 
 			ctx.Header("x-jwt-token", tokenStr)
 

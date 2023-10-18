@@ -164,8 +164,6 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 			return
 		}
 
-		fmt.Printf("login tokenStr: %s \n", tokenStr)
-
 		ctx.Header("x-jwt-token", tokenStr)
 
 		ctx.String(http.StatusOK, "登录成功!")
