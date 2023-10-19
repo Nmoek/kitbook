@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kitbook
+spec:
+  selector:
+    app: kitbook
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+#      逻辑上进行负载均衡
+  type: LoadBalancer
+  

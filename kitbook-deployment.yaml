@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kitbook-deployment
+spec:
+#  三个实例
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kitbook
+  template:
+    metadata:
+      labels:
+#       这里这个kitbook一定要和之前 selector-matchLabels的完全匹配
+        app: kitbook
+
+  #     Pod的具体模板
+    spec:
+  #     Pod中运行的所有容器container
+      containers:
+        - name: kitbook
+          image: nmoek/kitbook:v0.0.1
+          ports:
+            - containerPort: 8080
