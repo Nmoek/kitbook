@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kitbook-deployment
+  name: kitbook
 spec:
 #  三个实例
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: kitbook

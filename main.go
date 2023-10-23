@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"kitbook/config"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
@@ -25,6 +26,13 @@ func main() {
 
 	initUserHandler(db, server)
 
+	//server := gin.Default()
+	//
+	//server.GET("/hello", func(ctx *gin.Context) {
+	//	ctx.String(http.StatusOK, "hello, this is K8s!!")
+	//	return
+	//})
+
 	err := server.Run(":8080")
 	if err != nil {
 		panic(err)
@@ -40,8 +48,8 @@ func initUserHandler(db *gorm.DB, server *gin.Engine) {
 }
 
 func initDB() *gorm.DB {
-	dsn := "root:root@tcp(127.0.0.1:13316)/kitbook?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	//dsn := "root:root@tcp(127.0.0.1:13316)/kitbook?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
@@ -74,6 +82,8 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	//  TODO: redis使用的限流器
+
 	//userSession(server)
 	userJWT(server)
 
@@ -92,7 +102,7 @@ func userSession(server *gin.Engine) {
 	//store := memstore.NewStore([]byte("tHaegpgS1uxjmH3E9suduGmXECFm7CEk"), []byte("s6AjedURwVItfEsrhKS4QKvAUnRWJCcL"))
 
 	// 3. 使用redis存储session
-	store, err := redis.NewStore(10, "tcp", "localhost:6379", "",
+	store, err := redis.NewStore(10, "tcp", config.Config.Redis.Addr, "",
 		[]byte("tHaegpgS1uxjmH3E9suduGmXECFm7CEk"),
 		[]byte("s6AjedURwVItfEsrhKS4QKvAUnRWJCcL"))
 
