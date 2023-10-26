@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
+	rss "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	rdb "github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"kitbook/config"
 	"kitbook/internal/repository"
+	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"kitbook/internal/web"
@@ -23,8 +25,9 @@ func main() {
 
 	db := initDB()
 	server := initWebServer()
+	cmd := initRedis()
 
-	initUserHandler(db, server)
+	initUserHandler(db, cmd, server)
 
 	//server := gin.Default()
 	//
@@ -39,9 +42,10 @@ func main() {
 	}
 }
 
-func initUserHandler(db *gorm.DB, server *gin.Engine) {
+func initUserHandler(db *gorm.DB, cmd rdb.Cmdable, server *gin.Engine) {
 	d := dao.NewUserDao(db)
-	repo := repository.NewUserRepository(d)
+	c := cache.NewUserCache(cmd)
+	repo := repository.NewUserRepository(d, c)
 	svc := service.NewUserService(repo)
 	user := web.NewUserHandler(svc)
 	user.UserRegisterRoutes(server)
@@ -90,6 +94,15 @@ func initWebServer() *gin.Engine {
 	return server
 }
 
+func initRedis() rdb.Cmdable {
+
+	return rdb.NewClient(&rdb.Options{
+		Addr:     config.Config.Redis.Addr,
+		Password: config.Config.Redis.Password, // no password docs
+		DB:       0,                            // use default DB
+	})
+}
+
 func userSession(server *gin.Engine) {
 
 	//初始化seesion
@@ -102,7 +115,7 @@ func userSession(server *gin.Engine) {
 	//store := memstore.NewStore([]byte("tHaegpgS1uxjmH3E9suduGmXECFm7CEk"), []byte("s6AjedURwVItfEsrhKS4QKvAUnRWJCcL"))
 
 	// 3. 使用redis存储session
-	store, err := redis.NewStore(10, "tcp", config.Config.Redis.Addr, "",
+	store, err := rss.NewStore(10, "tcp", config.Config.Redis.Addr, "",
 		[]byte("tHaegpgS1uxjmH3E9suduGmXECFm7CEk"),
 		[]byte("s6AjedURwVItfEsrhKS4QKvAUnRWJCcL"))
 

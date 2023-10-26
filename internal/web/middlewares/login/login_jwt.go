@@ -76,7 +76,7 @@ func (builder *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 
 		//token是否即将过期, 是则要刷新
 		//通过token中的exp time 去倒计时判断
-		if claims.ExpiresAt.Sub(time.Now()) < 1*time.Minute {
+		if claims.ExpiresAt.Sub(time.Now()) < 3*time.Minute {
 			claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(30 * time.Minute))
 			newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 

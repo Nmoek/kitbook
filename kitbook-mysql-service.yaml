@@ -11,3 +11,4 @@ spec:
       nodePort: 31186
       targetPort: 3306
   type: NodePort
+

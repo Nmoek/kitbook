@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"gorm.io/gorm"
 	"kitbook/internal/domain"
+	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
 	"time"
 )
@@ -15,11 +17,13 @@ var (
 
 type UserRepository struct {
 	dao *dao.UserDao
+	c   *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDao) *UserRepository {
+func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository {
 	return &UserRepository{
 		dao: dao,
+		c:   cache,
 	}
 }
 
@@ -78,16 +82,45 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 // @param id
 // @return error
 func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
-	findUser, err := repo.dao.FindByID(ctx, id)
-	if err == gorm.ErrRecordNotFound {
-		return domain.User{}, ErrUserNotFound
+	// 查询缓存
+	cacheUser, err := repo.c.Get(ctx, id)
+
+	// 查询缓存err为nil有两种情况:
+	//	1. key不存在
+	//  2. 网络不通、Redis已经崩溃
+	fmt.Printf("err:%s, cache user:%v\n", err, cacheUser)
+
+	//TODO: 优化细分为key不存在再去查询数据库
+	switch err {
+	case nil:
+		return repo.convertsDomainUser(&cacheUser), nil
+	case cache.ErrKeyNotExist:
+		findUser, err := repo.dao.FindByID(ctx, id)
+
+		if err == gorm.ErrRecordNotFound {
+			return domain.User{}, ErrUserNotFound
+		}
+
+		if err != nil {
+			return domain.User{}, err
+		}
+
+		// 插入缓存
+		err = repo.c.Set(ctx, findUser)
+		// 查询缓存err为nil有两种情况:(缓存穿透)
+		// 1. 数据格式等其他因素插入失败
+		// 2. 网络不通、Redis已经崩溃
+
+		// TODO: 插入缓存错误日志埋点，不一定要返回错误，会让数据库压力增大但不一定崩溃
+		fmt.Printf("set key err:%s \n", err)
+
+		return repo.convertsDomainUser(&findUser), nil
+
+	default:
+		//TODO: 降级写法
+		return domain.User{}, nil
 	}
 
-	if err != nil {
-		return domain.User{}, err
-	}
-
-	return repo.convertsDomainUser(&findUser), nil
 }
 
 // @func: convertsDominUser

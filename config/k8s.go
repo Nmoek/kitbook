@@ -9,6 +9,7 @@ var Config = config{
 		DSN: "root:root@tcp(kitbook-mysql:3308)/kitbook?charset=utf8mb4&parseTime=True&loc=Local",
 	},
 	Redis: Redisconfig{
-		Addr: "kitbook-redis:6380",
+		Addr:     "kitbook-redis:6380",
+		Password: "",
 	},
 }

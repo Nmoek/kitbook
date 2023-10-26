@@ -12,5 +12,6 @@ type DBconfig struct {
 }
 
 type Redisconfig struct {
-	Addr string
+	Addr     string
+	Password string
 }
