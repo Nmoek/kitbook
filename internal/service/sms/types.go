@@ -6,7 +6,7 @@ import "context"
 
 type Service interface {
 	//Send(ctx context.Context, param SendParam)
-	Send(ctx context.Context, templateId string, args []string, phoneNumber []string)
+	Send(ctx context.Context, templateId string, args []string, phoneNumber []string) error
 }
 
 // SendParam

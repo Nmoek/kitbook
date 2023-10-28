@@ -1,4 +1,4 @@
-// Package tencent
+// Package smsTencent
 // @Description: 腾讯云短信服务实现
 package tencent
 
@@ -8,13 +8,21 @@ import (
 	"fmt"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
-	sms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111" // 引入sms
+	smsTencent "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111" // 引入sms
 )
 
 type Service struct {
-	Client   *sms.Client
+	Client   *smsTencent.Client
 	appId    string //固定不变
 	signName string //固定不变
+}
+
+func NewServiceTencent(cli *smsTencent.Client, appId string, signature string) *Service {
+	return &Service{
+		Client:   cli,
+		appId:    appId,
+		signName: signature,
+	}
 }
 
 // @func: Send
@@ -28,7 +36,7 @@ type Service struct {
 // @param phoneNumber
 func (s *Service) Send(ctx context.Context, templateId string, args []string, phoneNumber []string) error {
 
-	request := sms.NewSendSmsRequest()
+	request := smsTencent.NewSendSmsRequest()
 	//TODO: 链路数据，后续进行讲解
 	request.SetContext(ctx)
 	/* 基本类型的设置:
@@ -36,16 +44,16 @@ func (s *Service) Send(ctx context.Context, templateId string, args []string, ph
 	 * SDK提供对基本类型的指针引用封装函数
 	 * 帮助链接：
 	 * 短信控制台: https://console.cloud.tencent.com/smsv2
-	 * sms helper: https://cloud.tencent.com/document/product/382/3773 */
+	 * smsTencent helper: https://cloud.tencent.com/document/product/382/3773 */
 	/* 短信应用ID: 短信SdkAppId在 [短信控制台] 添加应用后生成的实际SdkAppId，示例如1400006666 */
 	request.SmsSdkAppId = common.StringPtr(s.appId)
 	/* 短信签名内容: 使用 UTF-8 编码，必须填写已审核通过的签名，签名信息可登录 [短信控制台] 查看 */
 	request.SignName = common.StringPtr(s.signName)
-	/* 国际/港澳台短信 SenderId: 中国大陆地区短信填空，默认未开通，如需开通请联系 [sms helper] */
+	/* 国际/港澳台短信 SenderId: 中国大陆地区短信填空，默认未开通，如需开通请联系 [smsTencent helper] */
 	//request.SenderId = common.StringPtr("")
 	/* 用户的 session 内容: 可以携带用户侧 ID 等上下文信息，server 会原样返回 */
 	//request.SessionContext = common.StringPtr("")
-	/* 短信码号扩展号: 默认未开通，如需开通请联系 [sms helper] */
+	/* 短信码号扩展号: 默认未开通，如需开通请联系 [smsTencent helper] */
 	//request.ExtendCode = common.StringPtr("")
 	/* 模板参数: 若无模板参数，则设置为空*/
 	request.TemplateParamSet = common.StringPtrs(args)
@@ -85,20 +93,12 @@ func (s *Service) Send(ctx context.Context, templateId string, args []string, ph
 	}
 
 	if flag {
-		return fmt.Errorf("message send err!")
+		return fmt.Errorf("message send err")
 	}
 
 	b, err := json.Marshal(response.Response)
 	// 打印返回的json字符串
-	fmt.Printf("%s", string(b))
+	fmt.Printf("sms Tencent: %s \n", string(b))
 
 	return err
-}
-
-func NewService(cli *sms.Client, appId string, signature string) *Service {
-	return &Service{
-		Client:   cli,
-		appId:    appId,
-		signName: signature,
-	}
 }
