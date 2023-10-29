@@ -9,13 +9,14 @@ import (
 )
 
 var (
-	ErrDuplicateEmail        = repository.ErrDuplicateEmail
+	ErrDuplicateEmail        = repository.ErrDuplicateUser
 	ErrInvalidUserOrPassword = errors.New("用户名或密码不正确") //
 	ErrInvalidUserAccess     = errors.New("非法用户访问")
 )
 
 type UserService struct {
 	repo *repository.UserRepository //一个服务只会有一个repository
+
 }
 
 // @func: NewUserService
@@ -106,14 +107,36 @@ func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, err
 
 }
 
-// @func: CheckID
-// @date: 2023-10-12 04:03:56
-// @brief: 查询拿到的ID是否存在
+// @func: SignupOrLoginWithPhone
+// @date: 2023-10-29 22:43:51
+// @brief: 通过手机号注册/登录
 // @author: Kewin Li
 // @receiver svc
 // @param ctx
-// @param id
-func (svc *UserService) CheckID(ctx context.Context, id int64) error {
-	_, err := svc.repo.FindByID(ctx, id)
-	return err
+// @param phone
+func (svc *UserService) SignupOrLoginWithPhone(ctx context.Context, phone string) (domain.User, error) {
+
+	// 默认认为大多数用户式已经注册的
+	user, err := svc.repo.FindByPhone(ctx, phone)
+	if err == nil || err != repository.ErrUserNotFound {
+		return user, err
+	}
+
+	// 用户不存在
+	err = svc.repo.Create(ctx, domain.User{
+		Phone: phone,
+	})
+
+	// err有两种可能:
+	// 1. 唯一索引冲突, 注册用户失败
+	// 2. 其他错误
+
+	if err != nil && err != repository.ErrDuplicateUser {
+		return domain.User{}, err
+	}
+
+	// 如果是已存在用户，查找出来即可
+	// 如果是未注册用户，可能存在主从库延迟问题，一般主库写入，从库查出
+	//TODO: 主从延迟问题，强制本次查询走主库
+	return svc.repo.FindByPhone(ctx, phone)
 }

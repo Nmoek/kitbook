@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"gorm.io/gorm"
 	"kitbook/internal/domain"
@@ -11,8 +12,8 @@ import (
 )
 
 var (
-	ErrDuplicateEmail = dao.ErrDuplicateEmail //邮箱已经存在于表中
-	ErrUserNotFound   = dao.ErrRecordNotFound //记录未查询到
+	ErrDuplicateUser = dao.ErrDuplicateUser  //邮箱已经存在于表中
+	ErrUserNotFound  = dao.ErrRecordNotFound //记录未查询到
 )
 
 type UserRepository struct {
@@ -36,8 +37,9 @@ func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository
 // @param user
 func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
 	return repo.dao.Insert(ctx, dao.User{
-		Email:    u.Email,
+		Email:    sql.NullString{String: u.Email},
 		Password: u.Password,
+		Phone:    sql.NullString{String: u.Phone},
 	})
 
 }
@@ -123,6 +125,25 @@ func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User
 
 }
 
+// @func: FindByPhone
+// @date: 2023-10-30 00:10:36
+// @brief: 转发模块-数据查询
+// @author: Kewin Li
+// @receiver repo
+// @param ctx
+// @param phone
+// @return domain.User
+// @return error
+func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+
+	findUser, err := repo.dao.FindByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return repo.convertsDomainUser(&findUser), nil
+}
+
 // @func: convertsDominUser
 // @date: 2023-10-09 02:08:11
 // @brief: 转化为domin的User结构体
@@ -132,7 +153,8 @@ func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User
 func (repo *UserRepository) convertsDomainUser(user *dao.User) domain.User {
 	return domain.User{
 		Id:       user.Id,
-		Email:    user.Email,
+		Email:    user.Email.String,
+		Phone:    user.Phone.String,
 		Password: user.Password,
 		Nickname: user.Nickname,
 		Birthday: time.UnixMilli(user.Birthday),
@@ -150,7 +172,8 @@ func (repo *UserRepository) convertsDomainUser(user *dao.User) domain.User {
 func (repo *UserRepository) convertsDaoUser(user *domain.User) dao.User {
 	return dao.User{
 		Id:       user.Id,
-		Email:    user.Email,
+		Email:    sql.NullString{String: user.Email},
+		Phone:    sql.NullString{String: user.Phone},
 		Password: user.Password,
 		Nickname: user.Nickname,
 		Birthday: user.Birthday.UnixMilli(),

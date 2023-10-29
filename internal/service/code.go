@@ -19,11 +19,11 @@ var ErrCodeVerifyCntTooMany = cache.ErrCodeVerifyCntTooMany
 var ErrCodeNotRight = cache.ErrCodeNotRight
 
 type CodeService struct {
-	repo repository.CodeRepository
+	repo *repository.CodeRepository
 	sms  sms.Service
 }
 
-func NewCodeService(repo repository.CodeRepository, sms sms.Service) *CodeService {
+func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
 	return &CodeService{
 		repo: repo,
 		sms:  sms,

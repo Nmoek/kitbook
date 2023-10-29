@@ -17,7 +17,7 @@ type Service struct {
 	signName string //固定不变
 }
 
-func NewServiceTencent(cli *smsTencent.Client, appId string, signature string) *Service {
+func NewService(cli *smsTencent.Client, appId string, signature string) *Service {
 	return &Service{
 		Client:   cli,
 		appId:    appId,

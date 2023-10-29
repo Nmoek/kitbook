@@ -19,7 +19,7 @@ elseif ttl == -2 or ttl < 540 then
     redis.call("expire", key, 600) --给key设置过期时间10min
     redis.call("set", cntKey, 3)
     redis.call("expire", cntKey, 600) -- 和验证码需要一起过期
-
+    return 0
 else
     -- 发送过于频繁
     return -2

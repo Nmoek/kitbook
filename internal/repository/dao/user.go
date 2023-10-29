@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	ErrDuplicateEmail = errors.New("邮箱已经被注册!")
+	ErrDuplicateUser  = errors.New("用户已存在!")
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
@@ -40,7 +41,7 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 		// 用户冲突
 		if me.Number == duplicateErr {
 			// TODO: 当判断手机号时，这里的定义是有问题的
-			return ErrDuplicateEmail
+			return ErrDuplicateUser
 		}
 	}
 
@@ -75,6 +76,21 @@ func (dao *UserDao) FindByID(ctx context.Context, id int64) (User, error) {
 	return findUser, err
 }
 
+// @func: FindByPhone
+// @date: 2023-10-30 00:26:46
+// @brief: 数据库查询操作-按手机号
+// @author: Kewin Li
+// @receiver dao
+// @param ctx
+// @param phone
+// @return interface{}
+// @return interface{}
+func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (User, error) {
+	findUser := User{}
+	err := dao.db.Where("phone = ?", phone).First(&findUser).Error
+	return findUser, err
+}
+
 // @func: UpdateById
 // @date: 2023-10-13 01:41:54
 // @brief: 数据库更新操作-按ID
@@ -97,8 +113,9 @@ func (dao *UserDao) UpdateById(ctx context.Context, user User) error {
 // User
 // @Description: 用户表结构定义
 type User struct {
-	Id       int64  `gorm:"primaryKey, autoIncrement"`
-	Email    string `gorm:"unique"`
+	Id       int64          `gorm:"primaryKey, autoIncrement"`
+	Email    sql.NullString `gorm:"unique"`
+	Phone    sql.NullString `gorm:"unique"`
 	Password string
 	Nickname string `gorm:"type=varchar(128)"`
 	Birthday int64
