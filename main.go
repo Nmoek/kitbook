@@ -18,6 +18,7 @@ import (
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"kitbook/internal/service/sms"
+	"kitbook/internal/service/sms/local"
 	"kitbook/internal/service/sms/tencent"
 	"kitbook/internal/web"
 	"kitbook/internal/web/middlewares/login"
@@ -31,9 +32,10 @@ func main() {
 	db := initDB()
 	server := initWebServer()
 	cmd := initRedis()
-	smsTencent := initSmsTencent()
+	//smsService := initSmsTencent()
+	smsService := local.NewService()
 
-	codeSvc := initCodeService(cmd, smsTencent)
+	codeSvc := initCodeService(cmd, smsService)
 
 	initUserHandler(db, cmd, codeSvc, server)
 
@@ -100,6 +102,7 @@ func initCodeService(cmd rdb.Cmdable, sms sms.Service) *service.CodeService {
 	codeCache := cache.NewCodeCache(cmd)
 	codeRepo := repository.NewCodeRepository(codeCache)
 	return service.NewCodeService(codeRepo, sms)
+
 }
 
 func initDB() *gorm.DB {

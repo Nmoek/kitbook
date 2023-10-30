@@ -1,5 +1,5 @@
-local key = KEY[1]
-local cntKey = key.."cnt"
+local key = KEYS[1]
+local cntKey = key..":cnt"
 
 -- 用户输入的验证码
 local expectedCode = ARGV[1]

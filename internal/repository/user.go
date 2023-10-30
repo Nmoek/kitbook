@@ -37,9 +37,15 @@ func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository
 // @param user
 func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
 	return repo.dao.Insert(ctx, dao.User{
-		Email:    sql.NullString{String: u.Email},
+		Email: sql.NullString{
+			String: u.Email,
+			Valid:  u.Email != "",
+		},
 		Password: u.Password,
-		Phone:    sql.NullString{String: u.Phone},
+		Phone: sql.NullString{
+			String: u.Phone,
+			Valid:  u.Phone != "",
+		},
 	})
 
 }

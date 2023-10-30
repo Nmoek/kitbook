@@ -24,9 +24,8 @@ func (builder *LoginMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		//注册、登录操作不能进行登录校验
-		path := ctx.Request.URL.Path
-		if path == "/users/login" || path == "/users/signup_test.sh" {
-			//TODO: 校验是否注册
+		if CheckIsSignupOrLogin(ctx) {
+			// TODO: 日志埋点, 打印当前直接返回的URL
 			return
 		}
 

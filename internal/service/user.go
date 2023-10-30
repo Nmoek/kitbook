@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrDuplicateEmail        = repository.ErrDuplicateUser
+	ErrDuplicateUser         = repository.ErrDuplicateUser
 	ErrInvalidUserOrPassword = errors.New("用户名或密码不正确") //
 	ErrInvalidUserAccess     = errors.New("非法用户访问")
 )

@@ -283,8 +283,8 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	switch err {
 	case nil:
 		ctx.String(http.StatusOK, "注册成功！")
-	case service.ErrDuplicateEmail:
-		ctx.String(http.StatusOK, "%s", service.ErrDuplicateEmail)
+	case service.ErrDuplicateUser:
+		ctx.String(http.StatusOK, "%s", service.ErrDuplicateUser)
 	default:
 		ctx.String(http.StatusOK, "系统错误!")
 	}
@@ -421,8 +421,6 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Printf("phone: %s \n", req.Phone)
-
 	// 手机号校验
 	isValid, err := h.phoneRegExp.MatchString(req.Phone)
 	if err != nil {
@@ -435,9 +433,8 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		return
 	}
 
-	err = h.code.Send(ctx, bizLogin, req.Phone)
-
 	// TODO: 使用一个本地调试，不需要真的使用短信服务
+	err = h.code.Send(ctx, bizLogin, req.Phone)
 
 	switch err {
 	case nil:
@@ -455,7 +452,6 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		})
 	}
 
-	ctx.String(http.StatusOK, "验证码发送成功")
 }
 
 // @func: LoginSMS
@@ -489,7 +485,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		return
 	}
 
-	ok, err := h.code.Verify(ctx, "UserLogin", req.Phone, req.Code)
+	ok, err := h.code.Verify(ctx, bizLogin, req.Phone, req.Code)
 	if err != nil {
 		// TODO: 验证码登录错误, 日志埋点
 		//fmt.Printf("code login fail! %s \n", err)
@@ -508,7 +504,9 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		return
 	}
 
-	//TODO: 发现当前手机号没有进行注册，需要提示注册并进入注册流程
+	//发现当前手机号没有进行注册，需要提示注册并进入注册流程
+	// TODO: 如果此时的手机号已经注册过邮箱，如何将该手机号和邮箱合并？合并时应注意什么问题
+
 	user, err := h.svc.SignupOrLoginWithPhone(ctx, req.Phone)
 	if err != nil {
 		ctx.JSON(http.StatusOK, "系统错误")
@@ -525,7 +523,9 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	//	return
 	//}
 
-	ctx.String(http.StatusOK, "登录成功")
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "登录成功",
+	})
 
 }
 
