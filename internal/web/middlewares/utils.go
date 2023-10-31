@@ -1,6 +1,6 @@
 // Package login
 // @Description: 登录校验通用组件
-package login
+package middlewares
 
 import "github.com/gin-gonic/gin"
 

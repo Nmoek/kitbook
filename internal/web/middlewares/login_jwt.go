@@ -1,6 +1,6 @@
 // Package login
 // @Description: 登录功能middleware
-package login
+package middlewares
 
 import (
 	"fmt"
