@@ -16,13 +16,21 @@ var (
 	ErrUserNotFound  = dao.ErrRecordNotFound //记录未查询到
 )
 
-type UserRepository struct {
-	dao *dao.UserDao
-	c   *cache.UserCache
+type UserRepository interface {
+	Create(ctx context.Context, u domain.User) error
+	UpdatePersonalInfo(ctx context.Context, user domain.User) error
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	FindByID(ctx context.Context, id int64) (domain.User, error)
+	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 }
 
-func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository {
-	return &UserRepository{
+type CacheUserRepository struct {
+	dao dao.UserDao
+	c   cache.UserCache
+}
+
+func NewCacheUserRepository(dao dao.UserDao, cache cache.UserCache) UserRepository {
+	return &CacheUserRepository{
 		dao: dao,
 		c:   cache,
 	}
@@ -35,7 +43,7 @@ func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository
 // @receiver repo
 // @param ctx
 // @param user
-func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
+func (repo *CacheUserRepository) Create(ctx context.Context, u domain.User) error {
 	return repo.dao.Insert(ctx, dao.User{
 		Email: sql.NullString{
 			String: u.Email,
@@ -58,7 +66,7 @@ func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
 // @param ctx
 // @param user
 // @return error
-func (repo *UserRepository) UpdatePersonalInfo(ctx context.Context, user domain.User) error {
+func (repo *CacheUserRepository) UpdatePersonalInfo(ctx context.Context, user domain.User) error {
 	return repo.dao.UpdateById(ctx, repo.convertsDaoUser(&user))
 }
 
@@ -69,7 +77,7 @@ func (repo *UserRepository) UpdatePersonalInfo(ctx context.Context, user domain.
 // @receiver repo
 // @param ctx
 // @param email
-func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+func (repo *CacheUserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	findUser, err := repo.dao.FindByEmail(ctx, email)
 	if err == gorm.ErrRecordNotFound {
 		return domain.User{}, ErrUserNotFound
@@ -89,7 +97,7 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 // @param ctx
 // @param id
 // @return error
-func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
+func (repo *CacheUserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
 	// 查询缓存
 	cacheUser, err := repo.c.Get(ctx, id)
 
@@ -140,7 +148,7 @@ func (repo *UserRepository) FindByID(ctx context.Context, id int64) (domain.User
 // @param phone
 // @return domain.User
 // @return error
-func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+func (repo *CacheUserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 
 	findUser, err := repo.dao.FindByPhone(ctx, phone)
 	if err != nil {
@@ -156,7 +164,7 @@ func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (doma
 // @author: Kewin Li
 // @param user
 // @return domain.User
-func (repo *UserRepository) convertsDomainUser(user *dao.User) domain.User {
+func (repo *CacheUserRepository) convertsDomainUser(user *dao.User) domain.User {
 	return domain.User{
 		Id:       user.Id,
 		Email:    user.Email.String,
@@ -175,7 +183,7 @@ func (repo *UserRepository) convertsDomainUser(user *dao.User) domain.User {
 // @receiver repo
 // @param user
 // @return dao.User
-func (repo *UserRepository) convertsDaoUser(user *domain.User) dao.User {
+func (repo *CacheUserRepository) convertsDaoUser(user *domain.User) dao.User {
 	return dao.User{
 		Id:       user.Id,
 		Email:    sql.NullString{String: user.Email},

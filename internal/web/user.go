@@ -29,8 +29,8 @@ type UserHandler struct {
 	emailRegExp    *regexp.Regexp
 	passwordRegExp *regexp.Regexp
 	phoneRegExp    *regexp.Regexp
-	svc            *service.UserService
-	code           *service.CodeService
+	svc            service.UserService
+	code           service.CodeService
 }
 
 // @func: NewUserHandler
@@ -38,7 +38,7 @@ type UserHandler struct {
 // @brief: 创建用户模块句柄
 // @author: Kewin Li
 // @return *UserHandler
-func NewUserHandler(svc *service.UserService, code *service.CodeService) *UserHandler {
+func NewUserHandler(svc service.UserService, code service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegExp: regexp.MustCompile(passwordRegexPattern, regexp.None),

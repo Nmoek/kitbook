@@ -13,19 +13,26 @@ import (
 
 const ErrKeyNotExist = redis.Nil
 
-type UserCache struct {
+type UserCache interface {
+	Get(ctx context.Context, id int64) (dao.User, error)
+	Set(ctx context.Context, user dao.User) error
+}
+
+// RedisUserCache
+// @Description: 基于Redis的缓存实现
+type RedisUserCache struct {
 	cmd        redis.Cmdable
 	expiration time.Duration
 }
 
-// @func: NewUserCache
+// @func: NewRedisUserCache
 // @date: 2023-10-26 01:47:36
 // @brief: 新建UserCache对象
 // @author: Kewin Li
 // @param cmd
-// @return *UserCache
-func NewUserCache(cmd redis.Cmdable) *UserCache {
-	return &UserCache{
+// @return *RedisUserCache
+func NewRedisUserCache(cmd redis.Cmdable) UserCache {
+	return &RedisUserCache{
 		cmd:        cmd,
 		expiration: 15 * time.Minute,
 	}
@@ -39,7 +46,7 @@ func NewUserCache(cmd redis.Cmdable) *UserCache {
 // @param id
 // @return interface{}
 // @return interface{}
-func (c *UserCache) Get(ctx context.Context, id int64) (dao.User, error) {
+func (c *RedisUserCache) Get(ctx context.Context, id int64) (dao.User, error) {
 	k := c.Key(id)
 	result := c.cmd.Get(ctx, k)
 	if err := result.Err(); err != nil {
@@ -60,7 +67,7 @@ func (c *UserCache) Get(ctx context.Context, id int64) (dao.User, error) {
 // @receiver cache
 // @param user
 // @return error
-func (c *UserCache) Set(ctx context.Context, user dao.User) error {
+func (c *RedisUserCache) Set(ctx context.Context, user dao.User) error {
 
 	val, err := json.Marshal(&user)
 	if err != nil {
@@ -78,7 +85,7 @@ func (c *UserCache) Set(ctx context.Context, user dao.User) error {
 // @receiver cache
 // @param id
 // @return string
-func (c *UserCache) Key(id int64) string {
+func (c *RedisUserCache) Key(id int64) string {
 	//user-info-
 	//user_info_
 	//user.info.

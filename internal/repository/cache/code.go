@@ -21,12 +21,19 @@ var ErrCodeSendTooMany = errors.New("验证码发送过于频繁")
 var ErrCodeVerifyCntTooMany = errors.New("超过验证次数")
 var ErrCodeNotRight = errors.New("验证码错误")
 
-type CodeCache struct {
+type CodeCache interface {
+	Set(ctx context.Context, biz, phone, code string) error
+	Verify(ctx context.Context, biz, phone, code string) (bool, error)
+}
+
+// RedisCodeCache
+// @Description: 基于Redis验证码实现
+type RedisCodeCache struct {
 	cmd redis.Cmdable
 }
 
-func NewCodeCache(cmd redis.Cmdable) *CodeCache {
-	return &CodeCache{
+func NewRedisCodeCache(cmd redis.Cmdable) CodeCache {
+	return &RedisCodeCache{
 		cmd: cmd,
 	}
 }
@@ -41,7 +48,7 @@ func NewCodeCache(cmd redis.Cmdable) *CodeCache {
 // @param phone
 // @param code
 // @return error
-func (c *CodeCache) Set(ctx context.Context, biz, phone, code string) error {
+func (c *RedisCodeCache) Set(ctx context.Context, biz, phone, code string) error {
 	res, err := c.cmd.Eval(ctx, luaSetCode, []string{c.Key(biz, phone)}, code).Int()
 	if err != nil {
 		return err
@@ -70,7 +77,7 @@ func (c *CodeCache) Set(ctx context.Context, biz, phone, code string) error {
 // @param code
 // @return bool
 // @return error
-func (c *CodeCache) Verify(ctx context.Context, biz, phone, code string) (bool, error) {
+func (c *RedisCodeCache) Verify(ctx context.Context, biz, phone, code string) (bool, error) {
 	res, err := c.cmd.Eval(ctx, luaVerifyCode, []string{c.Key(biz, phone)}, code).Int()
 	if err != nil {
 		return false, err
@@ -97,6 +104,6 @@ func (c *CodeCache) Verify(ctx context.Context, biz, phone, code string) (bool, 
 // @brief: 生成验证码所对应的Key值
 // @author: Kewin Li
 // @receiver c
-func (c *CodeCache) Key(biz, phone string) string {
+func (c *RedisCodeCache) Key(biz, phone string) string {
 	return fmt.Sprintf("phone_code:%s:%s", biz, phone)
 }

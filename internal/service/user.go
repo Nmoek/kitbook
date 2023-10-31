@@ -14,19 +14,31 @@ var (
 	ErrInvalidUserAccess     = errors.New("非法用户访问")
 )
 
-type UserService struct {
-	repo *repository.UserRepository //一个服务只会有一个repository
+// UserService
+// @Description: 普通用户、超级用户、VIP用户
+type UserService interface {
+	Signup(ctx context.Context, user domain.User) error
+	Login(ctx context.Context, email string, passwaord string) (domain.User, error)
+	Edit(ctx context.Context, user domain.User) error
+	Profile(ctx context.Context, id int64) (domain.User, error)
+	SignupOrLoginWithPhone(ctx context.Context, phone string) (domain.User, error)
+}
+
+// NormalUserService
+// @Description: 普通用户实现
+type NormalUserService struct {
+	repo repository.UserRepository //一个服务只会有一个repository
 
 }
 
-// @func: NewUserService
+// @func: NewNormalUserService
 // @date: 2023-10-08 02:42:59
 // @brief: 创建新的服务对象
 // @author: Kewin Li
 // @param repo
-// @return *UserService
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{
+// @return *NormalUserService
+func NewNormalUserService(repo repository.UserRepository) UserService {
+	return &NormalUserService{
 		repo: repo,
 	}
 }
@@ -39,7 +51,7 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 // @param ctx  TODO: 这个参数是做干嘛的？
 // @param user
 // @return error
-func (svc *UserService) Signup(ctx context.Context, user domain.User) error {
+func (svc *NormalUserService) Signup(ctx context.Context, user domain.User) error {
 	// 加密服务
 	cryptPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -59,7 +71,7 @@ func (svc *UserService) Signup(ctx context.Context, user domain.User) error {
 // @param ctx
 // @param user
 // @return error
-func (svc *UserService) Login(ctx context.Context, email string, passwaord string) (domain.User, error) {
+func (svc *NormalUserService) Login(ctx context.Context, email string, passwaord string) (domain.User, error) {
 	// 1. 根据邮箱找到用户
 	findUser, err := svc.repo.FindByEmail(ctx, email)
 	if err == repository.ErrUserNotFound {
@@ -88,7 +100,7 @@ func (svc *UserService) Login(ctx context.Context, email string, passwaord strin
 // @receiver svc
 // @param ctx
 // @param info
-func (svc *UserService) Edit(ctx context.Context, user domain.User) error {
+func (svc *NormalUserService) Edit(ctx context.Context, user domain.User) error {
 	return svc.repo.UpdatePersonalInfo(ctx, user)
 }
 
@@ -101,7 +113,7 @@ func (svc *UserService) Edit(ctx context.Context, user domain.User) error {
 // @param id
 // @return interface{}
 // @return interface{}
-func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
+func (svc *NormalUserService) Profile(ctx context.Context, id int64) (domain.User, error) {
 
 	return svc.repo.FindByID(ctx, id)
 
@@ -114,7 +126,7 @@ func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, err
 // @receiver svc
 // @param ctx
 // @param phone
-func (svc *UserService) SignupOrLoginWithPhone(ctx context.Context, phone string) (domain.User, error) {
+func (svc *NormalUserService) SignupOrLoginWithPhone(ctx context.Context, phone string) (domain.User, error) {
 
 	// 默认认为大多数用户式已经注册的
 	user, err := svc.repo.FindByPhone(ctx, phone)

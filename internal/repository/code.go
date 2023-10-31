@@ -7,12 +7,17 @@ import (
 	"kitbook/internal/repository/cache"
 )
 
-type CodeRepository struct {
-	cache *cache.CodeCache
+type CodeRepository interface {
+	Set(ctx context.Context, biz, phone, code string) error
+	Verify(ctx context.Context, biz, phone, inputCode string) (bool, error)
 }
 
-func NewCodeRepository(cache *cache.CodeCache) *CodeRepository {
-	return &CodeRepository{
+type RedisCodeRepository struct {
+	cache cache.CodeCache
+}
+
+func NewRedisCodeRepository(cache cache.CodeCache) CodeRepository {
+	return &RedisCodeRepository{
 		cache: cache,
 	}
 }
@@ -27,7 +32,7 @@ func NewCodeRepository(cache *cache.CodeCache) *CodeRepository {
 // @param phone
 // @param code
 // @return error
-func (c *CodeRepository) Set(ctx context.Context, biz, phone, code string) error {
+func (c *RedisCodeRepository) Set(ctx context.Context, biz, phone, code string) error {
 	return c.cache.Set(ctx, biz, phone, code)
 }
 
@@ -42,6 +47,6 @@ func (c *CodeRepository) Set(ctx context.Context, biz, phone, code string) error
 // @param inputCode
 // @return bool
 // @return error
-func (c *CodeRepository) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
+func (c *RedisCodeRepository) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
 	return c.cache.Verify(ctx, biz, phone, inputCode)
 }

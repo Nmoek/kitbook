@@ -34,11 +34,11 @@ func main() {
 	}
 }
 
-func initUserHandler(db *gorm.DB, cmd rdb.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
+func initUserHandler(db *gorm.DB, cmd rdb.Cmdable, codeSvc *service.PhoneCodeService, server *gin.Engine) {
 	userDao := dao.NewUserDao(db)
-	userCache := cache.NewUserCache(cmd)
-	repo := repository.NewUserRepository(userDao, userCache)
-	svc := service.NewUserService(repo)
+	userCache := cache.NewRedisUserCache(cmd)
+	repo := repository.NewCacheUserRepository(userDao, userCache)
+	svc := service.NewNormalUserService(repo)
 	user := web.NewUserHandler(svc, codeSvc)
 	user.UserRegisterRoutes(server)
 }

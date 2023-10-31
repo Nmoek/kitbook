@@ -21,15 +21,15 @@ func InitWebServer() *gin.Engine {
 		ioc.InitRedis,
 
 		dao.NewUserDao,
-		cache.NewUserCache,
-		cache.NewCodeCache,
+		cache.NewRedisUserCache,
+		cache.NewRedisCodeCache,
 
-		repository.NewUserRepository,
-		repository.NewCodeRepository,
+		repository.NewCacheUserRepository,
+		repository.NewRedisCodeRepository,
 
 		ioc.InitSmsService,
-		service.NewUserService,
-		service.NewCodeService,
+		service.NewNormalUserService,
+		service.NewPhoneCodeService,
 
 		ioc.InitGinMiddlewares,
 		web.NewUserHandler,

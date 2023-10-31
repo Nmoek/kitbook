@@ -18,13 +18,22 @@ var ErrCodeSendTooMany = cache.ErrCodeSendTooMany
 var ErrCodeVerifyCntTooMany = cache.ErrCodeVerifyCntTooMany
 var ErrCodeNotRight = cache.ErrCodeNotRight
 
-type CodeService struct {
-	repo *repository.CodeRepository
+// CodeService
+// @Description: 手机验证码、语音验证码、图形验证码
+type CodeService interface {
+	Send(ctx context.Context, biz, phone string) error
+	Verify(ctx context.Context, biz string, phone string, inputCode string) (bool, error)
+}
+
+// PhoneCodeService
+// @Description: 手机验证码实现
+type PhoneCodeService struct {
+	repo repository.CodeRepository
 	sms  sms.Service
 }
 
-func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
-	return &CodeService{
+func NewPhoneCodeService(repo repository.CodeRepository, sms sms.Service) CodeService {
+	return &PhoneCodeService{
 		repo: repo,
 		sms:  sms,
 	}
@@ -39,7 +48,7 @@ func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeServi
 // @param biz
 // @param phone
 // @return error
-func (c *CodeService) Send(ctx context.Context, biz, phone string) error {
+func (c *PhoneCodeService) Send(ctx context.Context, biz, phone string) error {
 	code := c.generate()
 	err := c.repo.Set(ctx, biz, phone, code)
 	if err != nil {
@@ -60,7 +69,7 @@ func (c *CodeService) Send(ctx context.Context, biz, phone string) error {
 // @param inputCode
 // @return bool
 // @return error
-func (c *CodeService) Verify(ctx context.Context, biz string, phone string, inputCode string) (bool, error) {
+func (c *PhoneCodeService) Verify(ctx context.Context, biz string, phone string, inputCode string) (bool, error) {
 	ok, err := c.repo.Verify(ctx, biz, phone, inputCode)
 	if err == ErrCodeVerifyCntTooMany {
 		//TODO: 验证码超过验证次数，日志埋点
@@ -76,7 +85,7 @@ func (c *CodeService) Verify(ctx context.Context, biz string, phone string, inpu
 // @author: Kewin Li
 // @receiver c
 // @return string
-func (c *CodeService) generate() string {
+func (c *PhoneCodeService) generate() string {
 
 	code := rand.Intn(10000000)
 	return fmt.Sprintf("%06d", code)

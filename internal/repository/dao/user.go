@@ -14,12 +14,20 @@ var (
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
-type UserDao struct {
+type UserDao interface {
+	Insert(ctx context.Context, u User) error
+	FindByEmail(ctx context.Context, email string) (User, error)
+	FindByID(ctx context.Context, id int64) (User, error)
+	FindByPhone(ctx context.Context, phone string) (User, error)
+	UpdateById(ctx context.Context, user User) error
+}
+
+type GormUserDao struct {
 	db *gorm.DB
 }
 
-func NewUserDao(db *gorm.DB) *UserDao {
-	return &UserDao{
+func NewUserDao(db *gorm.DB) UserDao {
+	return &GormUserDao{
 		db: db,
 	}
 }
@@ -31,7 +39,7 @@ func NewUserDao(db *gorm.DB) *UserDao {
 // @receiver dao
 // @param ctx
 // @param u
-func (dao *UserDao) Insert(ctx context.Context, u User) error {
+func (dao *GormUserDao) Insert(ctx context.Context, u User) error {
 	now := time.Now().UnixMilli()
 	u.Ctime = now
 	u.Utime = now
@@ -55,7 +63,7 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 // @receiver dao
 // @param ctx
 // @param email
-func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error) {
+func (dao *GormUserDao) FindByEmail(ctx context.Context, email string) (User, error) {
 
 	findUser := User{}
 	err := dao.db.Where("email = ?", email).First(&findUser).Error
@@ -70,7 +78,7 @@ func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error)
 // @param ctx
 // @param id
 // @return error
-func (dao *UserDao) FindByID(ctx context.Context, id int64) (User, error) {
+func (dao *GormUserDao) FindByID(ctx context.Context, id int64) (User, error) {
 	findUser := User{}
 	err := dao.db.Where("id = ?", id).First(&findUser).Error
 	return findUser, err
@@ -85,7 +93,7 @@ func (dao *UserDao) FindByID(ctx context.Context, id int64) (User, error) {
 // @param phone
 // @return interface{}
 // @return interface{}
-func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (User, error) {
+func (dao *GormUserDao) FindByPhone(ctx context.Context, phone string) (User, error) {
 	findUser := User{}
 	err := dao.db.Where("phone = ?", phone).First(&findUser).Error
 	return findUser, err
@@ -99,7 +107,8 @@ func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (User, error)
 // @param ctx
 // @param user
 // @return error
-func (dao *UserDao) UpdateById(ctx context.Context, user User) error {
+func (dao *GormUserDao) UpdateById(ctx context.Context, user User) error {
+	// TODO: 一致性问题？如何解决？先改redis还是先改数据库？
 	return dao.db.WithContext(ctx).Model(&user).Where("id = ?", user.Id).Updates(
 		map[string]interface{}{
 			"id":       user.Id,
