@@ -3,6 +3,7 @@ module kitbook
 go 1.21.1
 
 require (
+	github.com/coocood/freecache v1.2.4
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/sessions v0.0.5

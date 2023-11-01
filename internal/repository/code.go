@@ -12,12 +12,12 @@ type CodeRepository interface {
 	Verify(ctx context.Context, biz, phone, inputCode string) (bool, error)
 }
 
-type RedisCodeRepository struct {
+type codeRepository struct {
 	cache cache.CodeCache
 }
 
-func NewRedisCodeRepository(cache cache.CodeCache) CodeRepository {
-	return &RedisCodeRepository{
+func NewcodeRepository(cache cache.CodeCache) CodeRepository {
+	return &codeRepository{
 		cache: cache,
 	}
 }
@@ -32,7 +32,7 @@ func NewRedisCodeRepository(cache cache.CodeCache) CodeRepository {
 // @param phone
 // @param code
 // @return error
-func (c *RedisCodeRepository) Set(ctx context.Context, biz, phone, code string) error {
+func (c *codeRepository) Set(ctx context.Context, biz, phone, code string) error {
 	return c.cache.Set(ctx, biz, phone, code)
 }
 
@@ -47,6 +47,6 @@ func (c *RedisCodeRepository) Set(ctx context.Context, biz, phone, code string) 
 // @param inputCode
 // @return bool
 // @return error
-func (c *RedisCodeRepository) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
+func (c *codeRepository) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
 	return c.cache.Verify(ctx, biz, phone, inputCode)
 }
