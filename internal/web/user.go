@@ -194,7 +194,7 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 	}
 
 	if !isValid {
-		ctx.String(http.StatusOK, "邮箱格式错误！[xxx@qq.com]")
+		ctx.String(http.StatusOK, "邮箱格式错误, 例[xxx@qq.com]")
 		return
 	}
 
@@ -239,7 +239,6 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	//2. 文本校验--正则表达式
 	isVail, err := h.emailRegExp.MatchString(req.Email)
 	if err != nil {
-		fmt.Printf("邮箱校验出错！\n")
 		//ctx.String(http.StatusInternalServerError, "系统错误！")
 		ctx.String(http.StatusOK, "系统错误！")
 		return
