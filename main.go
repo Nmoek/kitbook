@@ -35,7 +35,7 @@ func main() {
 }
 
 func initUserHandler(db *gorm.DB, cmd rdb.Cmdable, codeSvc *service.PhoneCodeService, server *gin.Engine) {
-	userDao := dao.NewUserDao(db)
+	userDao := dao.NewGormUserDao(db)
 	userCache := cache.NewRedisUserCache(cmd)
 	repo := repository.NewCacheUserRepository(userDao, userCache)
 	svc := service.NewNormalUserService(repo)

@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"gorm.io/gorm"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository/cache"
@@ -67,7 +66,7 @@ func (repo *CacheUserRepository) Create(ctx context.Context, u domain.User) erro
 // @param user
 // @return error
 func (repo *CacheUserRepository) UpdatePersonalInfo(ctx context.Context, user domain.User) error {
-	return repo.dao.UpdateById(ctx, repo.convertsDaoUser(&user))
+	return repo.dao.UpdateById(ctx, ConvertsDaoUser(&user))
 }
 
 // @func: FindByEmail
@@ -86,7 +85,7 @@ func (repo *CacheUserRepository) FindByEmail(ctx context.Context, email string) 
 		return domain.User{}, err
 	}
 
-	return repo.convertsDomainUser(&findUser), nil
+	return ConvertsDomainUser(&findUser), nil
 }
 
 // @func: FindByID
@@ -104,12 +103,11 @@ func (repo *CacheUserRepository) FindByID(ctx context.Context, id int64) (domain
 	// 查询缓存err为nil有两种情况:
 	//	1. key不存在
 	//  2. 网络不通、Redis已经崩溃
-	fmt.Printf("err:%s, cache user:%v\n", err, cacheUser)
 
 	//TODO: 优化细分为key不存在再去查询数据库
 	switch err {
 	case nil:
-		return repo.convertsDomainUser(&cacheUser), nil
+		return ConvertsDomainUser(&cacheUser), nil
 	case cache.ErrKeyNotExist:
 		findUser, err := repo.dao.FindByID(ctx, id)
 
@@ -128,9 +126,8 @@ func (repo *CacheUserRepository) FindByID(ctx context.Context, id int64) (domain
 		// 2. 网络不通、Redis已经崩溃
 
 		// TODO: 插入缓存错误日志埋点，不一定要返回错误，会让数据库压力增大但不一定崩溃
-		fmt.Printf("set key err:%s \n", err)
 
-		return repo.convertsDomainUser(&findUser), nil
+		return ConvertsDomainUser(&findUser), nil
 
 	default:
 		//TODO: 降级写法
@@ -155,7 +152,7 @@ func (repo *CacheUserRepository) FindByPhone(ctx context.Context, phone string) 
 		return domain.User{}, err
 	}
 
-	return repo.convertsDomainUser(&findUser), nil
+	return ConvertsDomainUser(&findUser), nil
 }
 
 // @func: convertsDominUser
@@ -164,7 +161,7 @@ func (repo *CacheUserRepository) FindByPhone(ctx context.Context, phone string) 
 // @author: Kewin Li
 // @param user
 // @return domain.User
-func (repo *CacheUserRepository) convertsDomainUser(user *dao.User) domain.User {
+func ConvertsDomainUser(user *dao.User) domain.User {
 	return domain.User{
 		Id:       user.Id,
 		Email:    user.Email.String,
@@ -183,7 +180,7 @@ func (repo *CacheUserRepository) convertsDomainUser(user *dao.User) domain.User 
 // @receiver repo
 // @param user
 // @return dao.User
-func (repo *CacheUserRepository) convertsDaoUser(user *domain.User) dao.User {
+func ConvertsDaoUser(user *domain.User) dao.User {
 	return dao.User{
 		Id:       user.Id,
 		Email:    sql.NullString{String: user.Email},
