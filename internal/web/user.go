@@ -432,7 +432,7 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: 使用一个本地调试，不需要真的使用短信服务
+	// 使用一个本地调试，不需要真的使用短信服务
 	err = h.code.Send(ctx, bizLogin, req.Phone)
 
 	switch err {
