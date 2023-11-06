@@ -5,8 +5,10 @@ package ioc
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"kitbook/internal/web"
 	"kitbook/internal/web/middlewares"
+	"kitbook/pkg/ginx/ratelimit"
 	"strings"
 	"time"
 )
@@ -19,7 +21,7 @@ func InitWebService(middlewares []gin.HandlerFunc, userHdl *web.UserHandler) *gi
 	return server
 }
 
-func InitGinMiddlewares() []gin.HandlerFunc {
+func InitGinMiddlewares(client redis.Cmdable) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, //是否允许cookie
@@ -37,8 +39,8 @@ func InitGinMiddlewares() []gin.HandlerFunc {
 			MaxAge: 12 * time.Hour,
 		}),
 		(&middlewares.LoginJWTMiddlewareBuilder{}).CheckLogin(),
-		//TODO: 限流器中间件
-
+		//限流器中间件 1000 QPS/s
+		ratelimit.NewMiddlewareBuilder(client, time.Second, 1000).Build(),
 	}
 
 }
