@@ -4,30 +4,24 @@ package ratelimit
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
+	"kitbook/pkg/limiter"
 	"net/http"
-	"time"
 )
 
 //go:embed sliding_window.lua
 var luaSlidingWindow string
 
 type MiddlewareBuilder struct {
-	client     redis.Cmdable
-	keyGenFunc func(ctx *gin.Context) string
-	windowSize time.Duration
-	threshold  int
+	prefix  string
+	limiter limiter.Limiter
 }
 
-func NewMiddlewareBuilder(client redis.Cmdable, windowSize time.Duration, threshold int) *MiddlewareBuilder {
+func NewMiddlewareBuilder(limiter limiter.Limiter) *MiddlewareBuilder {
 	return &MiddlewareBuilder{
-		client:     client,
-		windowSize: windowSize,
-		threshold:  threshold,
-		keyGenFunc: func(ctx *gin.Context) string {
-			return "ip-limiter:" + ctx.ClientIP()
-		},
+		prefix:  "ip-limiter",
+		limiter: limiter,
 	}
 }
 
@@ -80,9 +74,9 @@ func NewMiddlewareBuilder(client redis.Cmdable, windowSize time.Duration, thresh
 //	}
 //}
 
-func (m MiddlewareBuilder) Build() gin.HandlerFunc {
+func (m *MiddlewareBuilder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		limited, err := m.limit(ctx)
+		limited, err := m.limiter.Limit(ctx, fmt.Sprintf("%s:%s", m.prefix, ctx.ClientIP()))
 		if err != nil {
 			// redis崩溃了是否应该限流
 			// 保守策略，返回错误，不接收请求
@@ -97,14 +91,4 @@ func (m MiddlewareBuilder) Build() gin.HandlerFunc {
 			return
 		}
 	}
-}
-
-func (m MiddlewareBuilder) limit(ctx *gin.Context) (bool, error) {
-	key := m.keyGenFunc(ctx)
-	return m.client.Eval(ctx,
-		luaSlidingWindow,
-		[]string{key},
-		m.windowSize.Milliseconds(),
-		m.threshold,
-		time.Now().UnixMilli()).Bool()
 }

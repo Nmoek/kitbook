@@ -5,21 +5,26 @@ package tencent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
+	errorsTencent "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	smsTencent "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111" // 引入sms
+	"kitbook/pkg/limiter"
 )
 
 type Service struct {
 	Client   *smsTencent.Client
-	appId    string //固定不变
-	signName string //固定不变
+	limiter  limiter.Limiter // 客户端限流
+	appId    string          //固定不变
+	signName string          //固定不变
+
 }
 
-func NewService(cli *smsTencent.Client, appId string, signature string) *Service {
+func NewService(cli *smsTencent.Client, limiter limiter.Limiter, appId string, signature string) *Service {
 	return &Service{
 		Client:   cli,
+		limiter:  limiter,
 		appId:    appId,
 		signName: signature,
 	}
@@ -35,7 +40,14 @@ func NewService(cli *smsTencent.Client, appId string, signature string) *Service
 // @param args
 // @param phoneNumber
 func (s *Service) Send(ctx context.Context, templateId string, args []string, phoneNumber []string) error {
-
+	isLimited, err := s.limiter.Limit(ctx, "tencent-sms-service")
+	if err != nil {
+		return err
+	}
+	if isLimited {
+		// TODO: 日志埋点
+		return errors.New("腾讯云即将限流")
+	}
 	request := smsTencent.NewSendSmsRequest()
 	//TODO: 链路数据，后续进行讲解
 	request.SetContext(ctx)
@@ -66,7 +78,7 @@ func (s *Service) Send(ctx context.Context, templateId string, args []string, ph
 	response, err := s.Client.SendSms(request)
 
 	// 处理异常
-	if _, ok := err.(*errors.TencentCloudSDKError); ok {
+	if _, ok := err.(*errorsTencent.TencentCloudSDKError); ok {
 		//TODO: 日志打印
 		//fmt.Printf("An API error has returned: %s", err)
 		return err

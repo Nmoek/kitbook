@@ -9,6 +9,7 @@ import (
 	"kitbook/internal/web"
 	"kitbook/internal/web/middlewares"
 	"kitbook/pkg/ginx/ratelimit"
+	"kitbook/pkg/limiter"
 	"strings"
 	"time"
 )
@@ -21,7 +22,7 @@ func InitWebService(middlewares []gin.HandlerFunc, userHdl *web.UserHandler) *gi
 	return server
 }
 
-func InitGinMiddlewares(client redis.Cmdable) []gin.HandlerFunc {
+func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, //是否允许cookie
@@ -40,7 +41,7 @@ func InitGinMiddlewares(client redis.Cmdable) []gin.HandlerFunc {
 		}),
 		(&middlewares.LoginJWTMiddlewareBuilder{}).CheckLogin(),
 		//限流器中间件 1000 QPS/s
-		ratelimit.NewMiddlewareBuilder(client, time.Second, 1000).Build(),
+		ratelimit.NewMiddlewareBuilder(limiter).Build(),
 	}
 
 }
