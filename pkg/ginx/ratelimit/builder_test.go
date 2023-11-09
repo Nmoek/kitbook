@@ -1,4 +1,4 @@
-// Package ratelimit
+// Package limitsms
 // @Description: 单元测试-限流器
 package ratelimit
 

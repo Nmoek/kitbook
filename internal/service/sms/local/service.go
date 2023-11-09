@@ -5,6 +5,7 @@ package local
 import (
 	"context"
 	"fmt"
+	"kitbook/pkg/limiter"
 )
 
 type Service struct {
@@ -16,6 +17,6 @@ func (s *Service) Send(ctx context.Context, templateId string, args []string, ph
 	return nil
 }
 
-func NewService() *Service {
+func NewService(limiter limiter.Limiter) *Service {
 	return &Service{}
 }

@@ -1,4 +1,4 @@
-// Package ratelimit
+// Package limitsms
 // @Description: 基于gin的限流插件
 package ratelimit
 

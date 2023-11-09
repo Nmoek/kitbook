@@ -7,13 +7,15 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	smsTencent "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
 	"kitbook/internal/service/sms"
+	"kitbook/internal/service/sms/limitsms"
 	"kitbook/internal/service/sms/local"
 	"kitbook/internal/service/sms/tencent"
 	"kitbook/pkg/limiter"
 )
 
-func InitSmsService() sms.Service {
-	return local.NewService()
+func InitSmsService(limiter limiter.Limiter) sms.Service {
+
+	return limitsms.NewLimitSMSService(local.NewService(limiter), limiter)
 }
 
 // TODO: 完善腾讯云短信服务初始化
@@ -49,5 +51,5 @@ func initSmsTencent(limiter limiter.Limiter) sms.Service {
 	 * 第二个参数是地域信息，可以直接填写字符串ap-guangzhou，支持的地域列表参考https://cloud.tencent.com/document/api/382/52071#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8 */
 	client, _ := smsTencent.NewClient(credential, "ap-guangzhou", cpf)
 
-	return tencent.NewService(client, limiter, "666666", "signature")
+	return tencent.NewService(client, "666666", "signature")
 }

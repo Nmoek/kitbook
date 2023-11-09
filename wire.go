@@ -29,6 +29,7 @@ func InitWebServer() *gin.Engine {
 		repository.NewCacheUserRepository,
 		repository.NewcodeRepository,
 
+		//  TODO: 如何使用多个不同的限流器
 		ioc.InitLimiter,
 		ioc.InitSmsService,
 		service.NewNormalUserService,
