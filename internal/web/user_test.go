@@ -4,6 +4,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
