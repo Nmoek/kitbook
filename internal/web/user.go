@@ -5,7 +5,6 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
 	"net/http"
@@ -21,11 +20,10 @@ const (
 	phoneRegexPattern = "(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}"
 )
 
-const TokenPrivateKey = "kAEpRBDAb1PlhOHdpHYelwdNIsjmJ5C5"
-
 const bizLogin = "login"
 
 type UserHandler struct {
+	jwtHandler     // 通过组合方式去共享一些函数/接口
 	emailRegExp    *regexp.Regexp
 	passwordRegExp *regexp.Regexp
 	phoneRegExp    *regexp.Regexp
@@ -140,32 +138,6 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "系统错误")
 	}
 
-}
-
-// @func: setJWTToken
-// @date: 2023-10-29 23:06:05
-// @brief: 设置JWT
-// @author: Kewin Li
-// @receiver h
-// @param ctx
-// @param id
-func (h *UserHandler) setJWTToken(ctx *gin.Context, id int64) {
-	// 设置JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaims{
-		UserID:    id,
-		UserAgent: ctx.GetHeader("User-Agent"),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
-		},
-	})
-
-	tokenStr, err := token.SignedString([]byte(TokenPrivateKey))
-	if err != nil {
-		ctx.String(http.StatusOK, "系统错误!")
-		return
-	}
-
-	ctx.Header("x-jwt-token", tokenStr)
 }
 
 // @func: LoginWithJWT
@@ -526,10 +498,4 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		Msg: "登录成功",
 	})
 
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	UserID    int64
-	UserAgent string
 }

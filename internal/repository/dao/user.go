@@ -20,6 +20,7 @@ type UserDao interface {
 	FindByID(ctx context.Context, id int64) (User, error)
 	FindByPhone(ctx context.Context, phone string) (User, error)
 	UpdateById(ctx context.Context, user User) error
+	FindByWechat(ctx context.Context, openid string) (User, error)
 }
 
 type GormUserDao struct {
@@ -119,12 +120,33 @@ func (dao *GormUserDao) UpdateById(ctx context.Context, user User) error {
 		}).Error
 }
 
+// @func: FindByWechat
+// @date: 2023-11-12 03:10:44
+// @brief: 数据库查询操作-按微信号
+// @author: Kewin Li
+// @receiver dao
+// @param ctx
+// @param openid
+// @return User
+// @return error
+func (dao *GormUserDao) FindByWechat(ctx context.Context, openid string) (User, error) {
+	findUser := User{}
+	err := dao.db.Where("open_id = ?", openid).First(&findUser).Error
+	return findUser, err
+}
+
 // User
 // @Description: 用户表结构定义
 type User struct {
-	Id       int64          `gorm:"primaryKey, autoIncrement"`
-	Email    sql.NullString `gorm:"unique"`
-	Phone    sql.NullString `gorm:"unique"`
+	Id    int64          `gorm:"primaryKey, autoIncrement"`
+	Email sql.NullString `gorm:"unique"`
+	Phone sql.NullString `gorm:"unique"`
+
+	//1. 如果查询要求同时查询openid和unionid, 建立联合唯一索引<openid, unionid>
+	//2. 如果查询只要求查询openid，建立一个唯一索引或建立联合唯一索引<openid, unionid>（openid必须在前）
+	//3. 如果查询只要求查询unionid，建立一个唯一索引或建立联合唯一索<unionid, openid>
+	Openid   sql.NullString `gorm:"unique"`
+	Unionid  sql.NullString
 	Password string
 	Nickname string `gorm:"type=varchar(128)"`
 	Birthday int64

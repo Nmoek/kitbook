@@ -10,6 +10,8 @@ var signupOrLoginPaths = []string{
 	"/users/signup",
 	"/users/login_sms",
 	"/users/login_sms/code/send",
+	"/oauth2/wechat/authurl",
+	"/oauth2.wechat/callback",
 }
 
 // @func: checkIsSignupOrLogin

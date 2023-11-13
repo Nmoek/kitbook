@@ -21,6 +21,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	FindByID(ctx context.Context, id int64) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
+	FindByWechat(ctx context.Context, openid string) (domain.User, error)
 }
 
 type CacheUserRepository struct {
@@ -138,7 +139,7 @@ func (repo *CacheUserRepository) FindByID(ctx context.Context, id int64) (domain
 
 // @func: FindByPhone
 // @date: 2023-10-30 00:10:36
-// @brief: 转发模块-数据查询
+// @brief: 转发模块-数据查询按手机号
 // @author: Kewin Li
 // @receiver repo
 // @param ctx
@@ -148,6 +149,24 @@ func (repo *CacheUserRepository) FindByID(ctx context.Context, id int64) (domain
 func (repo *CacheUserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 
 	findUser, err := repo.dao.FindByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return ConvertsDomainUser(&findUser), nil
+}
+
+// @func: FindByWechat
+// @date: 2023-11-12 03:08:29
+// @brief: 转发模块-数据查询按微信号
+// @author: Kewin Li
+// @receiver repo
+// @param ctx
+// @param openid
+// @return domain.User
+// @return error
+func (repo *CacheUserRepository) FindByWechat(ctx context.Context, openid string) (domain.User, error) {
+	findUser, err := repo.dao.FindByWechat(ctx, openid)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -170,6 +189,10 @@ func ConvertsDomainUser(user *dao.User) domain.User {
 		Nickname: user.Nickname,
 		Birthday: time.UnixMilli(user.Birthday),
 		AboutMe:  user.AboutMe,
+		WechatInfo: domain.WechtInfo{
+			Unionid: user.Unionid.String,
+			Openid:  user.Openid.String,
+		},
 	}
 }
 
@@ -182,9 +205,23 @@ func ConvertsDomainUser(user *dao.User) domain.User {
 // @return dao.User
 func ConvertsDaoUser(user *domain.User) dao.User {
 	return dao.User{
-		Id:       user.Id,
-		Email:    sql.NullString{String: user.Email},
-		Phone:    sql.NullString{String: user.Phone},
+		Id: user.Id,
+		Email: sql.NullString{
+			String: user.Email,
+			Valid:  user.Email != "",
+		},
+		Phone: sql.NullString{
+			String: user.Phone,
+			Valid:  user.Phone != "",
+		},
+		Unionid: sql.NullString{
+			String: user.WechatInfo.Unionid,
+			Valid:  user.WechatInfo.Unionid != "",
+		},
+		Openid: sql.NullString{
+			String: user.WechatInfo.Openid,
+			Valid:  user.WechatInfo.Openid != "",
+		},
 		Password: user.Password,
 		Nickname: user.Nickname,
 		Birthday: user.Birthday.UnixMilli(),

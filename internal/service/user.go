@@ -22,6 +22,7 @@ type UserService interface {
 	Edit(ctx context.Context, user domain.User) error
 	Profile(ctx context.Context, id int64) (domain.User, error)
 	SignupOrLoginWithPhone(ctx context.Context, phone string) (domain.User, error)
+	SignupOrLoginWithWechat(ctx context.Context, info domain.WechtInfo) (domain.User, error)
 }
 
 // NormalUserService
@@ -151,4 +152,39 @@ func (svc *NormalUserService) SignupOrLoginWithPhone(ctx context.Context, phone 
 	// 如果是未注册用户，可能存在主从库延迟问题，一般主库写入，从库查出
 	//TODO: 主从延迟问题，强制本次查询走主库
 	return svc.repo.FindByPhone(ctx, phone)
+}
+
+// @func: SignupOrLoginWithWechat
+// @date: 2023-11-12 01:32:22
+// @brief: 通过微信号注册/ 登录
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param info
+// @return domain.User
+// @return error
+func (svc *NormalUserService) SignupOrLoginWithWechat(ctx context.Context, info domain.WechtInfo) (domain.User, error) {
+	// 默认认为大多数用户式已经注册的
+	user, err := svc.repo.FindByWechat(ctx, info.Openid)
+	if err == nil || err != repository.ErrUserNotFound {
+		return user, err
+	}
+
+	// 用户不存在
+	err = svc.repo.Create(ctx, domain.User{
+		WechatInfo: info,
+	})
+
+	// err有两种可能:
+	// 1. 唯一索引冲突, 注册用户失败
+	// 2. 其他错误
+
+	if err != nil && err != repository.ErrDuplicateUser {
+		return domain.User{}, err
+	}
+
+	// 如果是已存在用户，查找出来即可
+	// 如果是未注册用户，可能存在主从库延迟问题，一般主库写入，从库查出
+	//TODO: 主从延迟问题，强制本次查询走主库
+	return svc.repo.FindByWechat(ctx, info.Openid)
 }
