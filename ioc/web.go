@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"kitbook/internal/web"
+	ijwt "kitbook/internal/web/jwt"
 	"kitbook/internal/web/middlewares"
 	"kitbook/pkg/ginx/ratelimit"
 	"kitbook/pkg/limiter"
@@ -25,7 +26,7 @@ func InitWebService(middlewares []gin.HandlerFunc,
 	return server
 }
 
-func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter) []gin.HandlerFunc {
+func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter, jwtHdl ijwt.JWTHandler) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, //是否允许cookie
@@ -42,7 +43,7 @@ func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter) []gin.Han
 			},
 			MaxAge: 12 * time.Hour,
 		}),
-		(&middlewares.LoginJWTMiddlewareBuilder{}).CheckLogin(),
+		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin(),
 		//限流器中间件 1000 QPS/s
 		ratelimit.NewMiddlewareBuilder(limiter).Build(),
 	}

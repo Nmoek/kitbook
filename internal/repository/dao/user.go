@@ -109,7 +109,7 @@ func (dao *GormUserDao) FindByPhone(ctx context.Context, phone string) (User, er
 // @param user
 // @return error
 func (dao *GormUserDao) UpdateById(ctx context.Context, user User) error {
-	// TODO: 一致性问题？如何解决？先改redis还是先改数据库？
+
 	return dao.db.WithContext(ctx).Model(&user).Where("id = ?", user.Id).Updates(
 		map[string]interface{}{
 			"id":       user.Id,

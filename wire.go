@@ -10,6 +10,7 @@ import (
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"kitbook/internal/web"
+	ijwt "kitbook/internal/web/jwt"
 	"kitbook/ioc"
 )
 
@@ -37,6 +38,7 @@ func InitWebServer() *gin.Engine {
 		ioc.InitWechatService,
 
 		ioc.InitGinMiddlewares,
+		ijwt.NewRedisJWTHandler,
 		web.NewUserHandler,
 		web.NewOAuth2WechatHandler,
 		ioc.InitWebService,

@@ -67,6 +67,7 @@ func (repo *CacheUserRepository) Create(ctx context.Context, u domain.User) erro
 // @param user
 // @return error
 func (repo *CacheUserRepository) UpdatePersonalInfo(ctx context.Context, user domain.User) error {
+	// TODO: 一致性问题？如何解决？先改redis还是先改数据库？
 	return repo.dao.UpdateById(ctx, ConvertsDaoUser(&user))
 }
 

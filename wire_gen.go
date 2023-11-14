@@ -13,6 +13,7 @@ import (
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"kitbook/internal/web"
+	"kitbook/internal/web/jwt"
 	"kitbook/ioc"
 )
 
@@ -21,7 +22,8 @@ import (
 func InitWebServer() *gin.Engine {
 	cmdable := ioc.InitRedis()
 	limiter := ioc.InitLimiter(cmdable)
-	v := ioc.InitGinMiddlewares(cmdable, limiter)
+	jwtHandler := jwt.NewRedisJWTHandler(cmdable)
+	v := ioc.InitGinMiddlewares(cmdable, limiter, jwtHandler)
 	db := ioc.InitDB()
 	userDao := dao.NewGormUserDao(db)
 	userCache := cache.NewRedisUserCache(cmdable)
@@ -31,9 +33,9 @@ func InitWebServer() *gin.Engine {
 	codeRepository := repository.NewcodeRepository(codeCache)
 	smsService := ioc.InitSmsService(limiter)
 	codeService := service.NewPhoneCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService)
+	userHandler := web.NewUserHandler(userService, codeService, jwtHandler)
 	wechatService := ioc.InitWechatService()
-	oAuth2WechatHandler := web.NewOAuth2WechatHandler(wechatService, userService)
+	oAuth2WechatHandler := web.NewOAuth2WechatHandler(wechatService, userService, jwtHandler)
 	engine := ioc.InitWebService(v, userHandler, oAuth2WechatHandler)
 	return engine
 }

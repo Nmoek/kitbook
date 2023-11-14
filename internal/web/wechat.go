@@ -7,23 +7,25 @@ import (
 	"github.com/google/uuid"
 	"kitbook/internal/service"
 	"kitbook/internal/service/oauth2/wechat"
+	ijwt "kitbook/internal/web/jwt"
 	"net/http"
 )
 
 type OAuth2WechatHandler struct {
 	wechatSvc       wechat.Service
 	userSvc         service.UserService
-	jwtHandler      // 通过组合方式去共享一些函数/接口
+	jwtHdl          ijwt.JWTHandler // 通过组合方式去共享一些函数/接口
 	key             string
 	stateCookieName string
 }
 
-func NewOAuth2WechatHandler(svc wechat.Service, userSvc service.UserService) *OAuth2WechatHandler {
+func NewOAuth2WechatHandler(svc wechat.Service, userSvc service.UserService, jwtHdl ijwt.JWTHandler) *OAuth2WechatHandler {
 	return &OAuth2WechatHandler{
 		wechatSvc:       svc,
 		userSvc:         userSvc,
 		key:             "kAEpRBDAb1PlhOHdpHYelwdNIsjmJ5C6",
 		stateCookieName: "jwt-state",
+		jwtHdl:          jwtHdl,
 	}
 }
 
@@ -101,7 +103,14 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
-	o.setJWTToken(ctx, user.Id)
+	err = o.jwtHdl.SetTokenWithSsid(ctx, user.Id)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+		return
+	}
 
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "登录成功",
