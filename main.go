@@ -1,7 +1,12 @@
 package main
 
-func main() {
+import (
+	"fmt"
+	"github.com/spf13/viper"
+)
 
+func main() {
+	initViper()
 	server := InitWebServer()
 
 	//server := gin.Default()
@@ -15,6 +20,36 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func initViperV1() {
+	viper.SetConfigName("dev")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("config")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	val := viper.Get("test.key")
+
+	fmt.Printf("Test========================= %T %v \n", val, val)
+}
+
+func initViper() {
+
+	viper.SetConfigType("yaml")
+	viper.SetConfigFile("config/dev.yaml")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	val := viper.Get("test.key")
+
+	fmt.Printf("Test========================= %T %v \n", val, val)
 }
 
 //func initUserHandler(db *gorm.DB, cmd rdb.Cmdable, codeSvc *service.PhoneCodeService, server *gin.Engine) {

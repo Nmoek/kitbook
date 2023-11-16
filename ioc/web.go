@@ -43,7 +43,8 @@ func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter, jwtHdl ij
 			},
 			MaxAge: 12 * time.Hour,
 		}),
-		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin(),
+		//middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin(),
+		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin_LongShortToken(),
 		//限流器中间件 1000 QPS/s
 		ratelimit.NewMiddlewareBuilder(limiter).Build(),
 	}

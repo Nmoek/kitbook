@@ -104,7 +104,7 @@ func (r *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
 
 	claims := ctx.MustGet("user_token").(UserClaims)
 
-	return r.cmd.Set(ctx, "user:ssid:%s", claims.Ssid, r.expiration).Err()
+	return r.cmd.Set(ctx, fmt.Sprintf("users:ssid:%s", claims.Ssid), "", r.expiration).Err()
 }
 
 // @func: CheckSsid

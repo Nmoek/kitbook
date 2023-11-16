@@ -71,7 +71,10 @@ func (h *UserHandler) UserRegisterRoutes(server *gin.Engine) {
 	group.POST("login_sms/code/send", h.SendLoginSMSCode)
 	group.POST("login_sms", h.LoginSMS)
 
-	group.POST("/users/logout", h.Logout)
+	//group.POST("/logout", h.Logout)
+
+	group.POST("/logout", h.LogoutWithJWT)
+
 }
 
 // @func: setSession
@@ -572,6 +575,7 @@ func (h *UserHandler) Logout(ctx *gin.Context) {
 	})
 
 	err := session.Save()
+
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "系统错误",
