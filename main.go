@@ -1,12 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"github.com/spf13/viper"
 )
 
 func main() {
+	// 初始化配置模块
 	initViper()
+
+	// 初始化Web服务
 	server := InitWebServer()
 
 	//server := gin.Default()
@@ -32,9 +34,6 @@ func initViperV1() {
 		panic(err)
 	}
 
-	val := viper.Get("test.key")
-
-	fmt.Printf("Test========================= %T %v \n", val, val)
 }
 
 func initViper() {
@@ -47,9 +46,6 @@ func initViper() {
 		panic(err)
 	}
 
-	val := viper.Get("test.key")
-
-	fmt.Printf("Test========================= %T %v \n", val, val)
 }
 
 //func initUserHandler(db *gorm.DB, cmd rdb.Cmdable, codeSvc *service.PhoneCodeService, server *gin.Engine) {

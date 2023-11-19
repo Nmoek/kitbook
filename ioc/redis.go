@@ -30,6 +30,7 @@ func InitRedis() redis.Cmdable {
 	if err != nil {
 		panic(err)
 	}
+
 	return redis.NewClient(&redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password, // no password docs

@@ -14,7 +14,7 @@ func InitDB() *gorm.DB {
 	//db, err := gorm.Open(mysql.Open(config.Config.DB.DSN), &gorm.Config{})
 	//db, err := gorm.Open(mysql.Open(viper.GetString("db.dsn")), &gorm.Config{})
 
-	//推荐这种写法
+	//结构体反序列化, 推荐这种写法
 	type Config struct {
 		DSN string `yaml:"dsn"`
 	}
@@ -30,6 +30,7 @@ func InitDB() *gorm.DB {
 		panic(err)
 	}
 
+	// 初始化表结构(慎该写法)
 	err = dao.InitTables(db)
 	if err != nil {
 		panic(err)

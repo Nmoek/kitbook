@@ -3,6 +3,7 @@
 package ioc
 
 import (
+	"context"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -11,6 +12,7 @@ import (
 	"kitbook/internal/web/middlewares"
 	"kitbook/pkg/ginx/ratelimit"
 	"kitbook/pkg/limiter"
+	"kitbook/pkg/logger"
 	"strings"
 	"time"
 )
@@ -26,7 +28,10 @@ func InitWebService(middlewares []gin.HandlerFunc,
 	return server
 }
 
-func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter, jwtHdl ijwt.JWTHandler) []gin.HandlerFunc {
+func InitGinMiddlewares(client redis.Cmdable,
+	limiter limiter.Limiter,
+	jwtHdl ijwt.JWTHandler,
+	l logger.Logger) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, //是否允许cookie
@@ -44,9 +49,16 @@ func InitGinMiddlewares(client redis.Cmdable, limiter limiter.Limiter, jwtHdl ij
 			MaxAge: 12 * time.Hour,
 		}),
 		//middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin(),
-		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin_LongShortToken(),
+
 		//限流器中间件 1000 QPS/s
 		ratelimit.NewMiddlewareBuilder(limiter).Build(),
+		// 传入要实现的日志打印
+		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
+
+			l.DEBUG("", logger.Field{Key: "req", Val: al})
+
+		}).AllowReqBody().AllowRespBody().Build(),
+		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin_LongShortToken(),
 	}
 
 }
