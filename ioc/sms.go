@@ -11,6 +11,7 @@ import (
 	"kitbook/internal/service/sms/local"
 	"kitbook/internal/service/sms/tencent"
 	"kitbook/pkg/limiter"
+	"kitbook/pkg/logger"
 )
 
 func InitSmsService(limiter limiter.Limiter) sms.Service {
@@ -19,7 +20,7 @@ func InitSmsService(limiter limiter.Limiter) sms.Service {
 }
 
 // TODO: 完善腾讯云短信服务初始化
-func initSmsTencent(limiter limiter.Limiter) sms.Service {
+func initSmsTencent(limiter limiter.Limiter, l logger.Logger) sms.Service {
 
 	/* 必要步骤：
 	 * 实例化一个认证对象，入参需要传入腾讯云账户密钥对secretId，secretKey。
@@ -51,5 +52,5 @@ func initSmsTencent(limiter limiter.Limiter) sms.Service {
 	 * 第二个参数是地域信息，可以直接填写字符串ap-guangzhou，支持的地域列表参考https://cloud.tencent.com/document/api/382/52071#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8 */
 	client, _ := smsTencent.NewClient(credential, "ap-guangzhou", cpf)
 
-	return tencent.NewService(client, "666666", "signature")
+	return tencent.NewService(client, "666666", "signature", l)
 }

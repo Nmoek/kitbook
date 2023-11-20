@@ -111,3 +111,18 @@ func (mr *MockUserServiceMockRecorder) SignupOrLoginWithPhone(ctx, phone any) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignupOrLoginWithPhone", reflect.TypeOf((*MockUserService)(nil).SignupOrLoginWithPhone), ctx, phone)
 }
+
+// SignupOrLoginWithWechat mocks base method.
+func (m *MockUserService) SignupOrLoginWithWechat(ctx context.Context, info domain.WechtInfo) (domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignupOrLoginWithWechat", ctx, info)
+	ret0, _ := ret[0].(domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignupOrLoginWithWechat indicates an expected call of SignupOrLoginWithWechat.
+func (mr *MockUserServiceMockRecorder) SignupOrLoginWithWechat(ctx, info any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignupOrLoginWithWechat", reflect.TypeOf((*MockUserService)(nil).SignupOrLoginWithWechat), ctx, info)
+}

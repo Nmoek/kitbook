@@ -9,20 +9,25 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	errorsTencent "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	smsTencent "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111" // 引入sms
+	"kitbook/pkg/logger"
 )
 
 type Service struct {
 	Client   *smsTencent.Client
 	appId    string //固定不变
 	signName string //固定不变
-
+	l        logger.Logger
 }
 
-func NewService(cli *smsTencent.Client, appId string, signature string) *Service {
+func NewService(cli *smsTencent.Client,
+	appId string,
+	signature string,
+	l logger.Logger) *Service {
 	return &Service{
 		Client:   cli,
 		appId:    appId,
 		signName: signature,
+		l:        l,
 	}
 }
 

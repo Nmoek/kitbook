@@ -84,7 +84,7 @@ func (svc *NormalUserService) Login(ctx context.Context, email string, passwaord
 
 	// 2. 校验密码
 	err = bcrypt.CompareHashAndPassword([]byte(findUser.Password), []byte(passwaord))
-	if err == repository.ErrUserNotFound {
+	if err == bcrypt.ErrMismatchedHashAndPassword {
 		return domain.User{}, ErrInvalidUserOrPassword
 	}
 	if err != nil {

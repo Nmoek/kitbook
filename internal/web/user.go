@@ -121,10 +121,10 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	var err error
 	var isVail bool
 	var user domain.User
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_LOGIN,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_LOGIN,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_LOGIN]
 
 	err = ctx.Bind(&req)
@@ -143,8 +143,11 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	if !isVail {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s][%s], 邮箱格式错误", ctx.ClientIP(), req.Email)
-		otherMsg := fmt.Sprintf("[%s][%s], 邮箱格式错误", ctx.ClientIP(), req.Email)
-		h.l.WARN(logKey, logger.Field{"email", otherMsg})
+
+		h.l.WARN(logKey, logger.Field{
+			"email",
+			fmt.Sprintf("[%s][%s], 邮箱格式错误", ctx.ClientIP(), req.Email),
+		})
 		ctx.String(http.StatusOK, "邮箱格式错误！[xxx@qq.com]")
 		return
 	}
@@ -163,20 +166,31 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 
 		//msg.Level = logger.InfoLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s][%s], 登录成功", ctx.ClientIP(), req.Email)
-		otherMsg := fmt.Sprintf("[%s][%s], 登录成功", ctx.ClientIP(), req.Email)
-		h.l.INFO(logKey, logger.Field{"success", otherMsg})
+
+		h.l.INFO(logKey, logger.Field{
+			"success",
+			(fmt.Sprintf("[%s][%s], 登录成功", ctx.ClientIP(), req.Email)),
+		})
 		ctx.String(http.StatusOK, "登录成功！")
 		return
 	case service.ErrInvalidUserOrPassword:
-		msg.Level = logger.WarnLevel
+		//msg.Level = logger.WarnLevel
+
+		h.l.WARN(logKey, logger.Field{
+			"invalid",
+			fmt.Sprintf("[%s] 用户名或密码不正确", ctx.ClientIP()),
+		})
+
 		ctx.String(http.StatusOK, "用户名或密码不正确!")
+		return
 	default:
 		ctx.String(http.StatusOK, "系统错误")
 	}
 
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGIN], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGIN], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 
 }
@@ -198,10 +212,10 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 	var err error
 	var isValid bool
 	var user domain.User
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_LOGIN,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_LOGIN,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_LOGIN]
 
 	err = ctx.Bind(&req)
@@ -219,10 +233,13 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 	if !isValid {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] 输入邮箱格式错误")
-		otherMsg := fmt.Sprintf("[%s][%s], 邮箱格式错误", ctx.ClientIP(), req.Email)
-		h.l.WARN(logKey, logger.Field{"email", otherMsg})
+
+		h.l.WARN(logKey, logger.Field{
+			"email",
+			fmt.Sprintf("[%s][%s], 邮箱格式错误", ctx.ClientIP(), req.Email),
+		})
 		ctx.String(http.StatusOK, "邮箱格式错误, 例[xxx@qq.com]")
-		goto ERR
+		return
 	}
 
 	user, err = h.svc.Login(ctx, req.Email, req.Password)
@@ -239,21 +256,31 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 
 		//msg.Level = logger.InfoLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s][%s], 登录成功", ctx.ClientIP(), req.Email)
-		otherMsg := fmt.Sprintf("[%s][%s], 登录成功", ctx.ClientIP(), req.Email)
-		h.l.INFO(logKey, logger.Field{"success", otherMsg})
+
+		h.l.INFO(logKey, logger.Field{
+			"success",
+			fmt.Sprintf("[%s][%s], 登录成功", ctx.ClientIP(), req.Email),
+		})
 		ctx.String(http.StatusOK, "登录成功!")
 		return
 
 	case service.ErrInvalidUserOrPassword:
-		msg.Level = logger.WarnLevel
+		//msg.Level = logger.WarnLevel
+		h.l.WARN(logKey, logger.Field{
+			"invalid",
+			fmt.Sprintf("[%s][%s], 用户名或密码错误", ctx.ClientIP(), req.Email),
+		})
 		ctx.String(http.StatusOK, "用户名或密码错误!")
+		return
 	default:
 		ctx.String(http.StatusOK, "系统错误!")
 	}
 
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGIN], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGIN], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
+
 	return
 }
 
@@ -275,10 +302,10 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	var req SignUpReq
 	var err error = nil // 默认没有错误
 	var isVail bool
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_SIGNUP, //具体逻辑下具体放置
-		Level:  logger.ErrorLevel, //默认为错误
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_SIGNUP, //具体逻辑下具体放置
+	//	Level:  logger.ErrorLevel, //默认为错误
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_SIGNUP]
 
 	err = ctx.Bind(&req)
@@ -297,10 +324,11 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	if !isVail {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] 邮箱格式输入错误", ctx.ClientIP())
-		ctx.String(http.StatusOK, "邮箱格式错误！[xxx@qq.com]")
-		//goto ERR
 
-		h.l.WARN(logKey, logger.Field{"email", "邮箱格式错误"})
+		h.l.WARN(logKey, logger.Field{
+			"email",
+			fmt.Sprintf("[%s] 邮箱格式输入错误", ctx.ClientIP())})
+		ctx.String(http.StatusOK, "邮箱格式错误！[xxx@qq.com]")
 		return
 	}
 
@@ -309,8 +337,10 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] 两次密码输入不一致", ctx.ClientIP())
 
-		otherMsg := fmt.Sprintf("[%s] 两次密码输入不一致", ctx.ClientIP())
-		h.l.WARN(logKey, logger.Field{"email", otherMsg})
+		h.l.WARN(logKey, logger.Field{
+			"confirm_password",
+			fmt.Sprintf("[%s] 两次密码输入不一致", ctx.ClientIP()),
+		})
 
 		ctx.String(http.StatusOK, "两次密码输入不一致！")
 		return
@@ -326,8 +356,10 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] 输入密码格式错误", ctx.ClientIP())
 
-		otherMsg := fmt.Sprintf("[%s] 两次密码输入不一致", ctx.ClientIP())
-		h.l.WARN(logKey, logger.Field{"email", otherMsg})
+		h.l.WARN(logKey, logger.Field{
+			"invalid",
+			fmt.Sprintf("[%s] 输入密码格式错误", ctx.ClientIP()),
+		})
 
 		ctx.String(http.StatusOK, "必须包含大小写字母和数字的组合，不能使用特殊字符，长度在8-16之间")
 		return
@@ -344,20 +376,29 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	case nil:
 		//msg.Level = logger.InfoLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] %s, 注册成功", ctx.ClientIP(), req.Email)
-		otherMsg := fmt.Sprintf("[%s] %s, 注册成功", ctx.ClientIP(), req.Email)
-		h.l.INFO(logKey, logger.Field{"success", otherMsg})
+		h.l.INFO(logKey, logger.Field{
+			"success",
+			fmt.Sprintf("[%s] %s, 注册成功", ctx.ClientIP(), req.Email),
+		})
+
 		ctx.String(http.StatusOK, "注册成功！")
 		return //无报错就返回
 
 	case service.ErrDuplicateUser:
+		h.l.WARN(logKey, logger.Field{
+			"invalid",
+			fmt.Sprintf("[%s] %s, 用户已注册", ctx.ClientIP(), req.Email),
+		})
 		ctx.String(http.StatusOK, "%s", service.ErrDuplicateUser)
+		return
 	default:
 		ctx.String(http.StatusOK, "系统错误!")
 	}
 
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_SIGNUP], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_SIGNUP], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
 
@@ -398,10 +439,10 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	var err error
 	var birthday time.Time
 	var userID int64
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_EDIT,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_EDIT,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_EDIT]
 
 	err = ctx.Bind(&req)
@@ -425,8 +466,10 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] 输入非法生日格式", ctx.ClientIP())
 
-		otherMsg := fmt.Sprintf("[%s] 输入非法生日格式", ctx.ClientIP())
-		h.l.WARN(logKey, logger.Field{"birthday", otherMsg})
+		h.l.WARN(logKey, logger.Field{
+			"birthday",
+			fmt.Sprintf("[%s] %s 输入非法生日格式", ctx.ClientIP(), req.Birthday),
+		})
 
 		ctx.String(http.StatusOK, "非法生日格式。例: 2023-10-11")
 		return
@@ -444,13 +487,17 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		goto ERR
 	}
 
-	h.l.INFO(logKey, logger.Field{"success", "修改个人信息成功"})
+	h.l.INFO(logKey, logger.Field{
+		"success",
+		fmt.Sprintf("[%s] 修改个人信息成功", ctx.ClientIP()),
+	})
 	ctx.String(http.StatusOK, "修改个人信息成功!")
 	return
 
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_EDIT], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_EDIT], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
 
@@ -473,10 +520,10 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	var userID int64
 	var err error
 	var user domain.User
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_PROFILE,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_PROFILE,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_PROFILE]
 	// 1. 用户ID
 	//userID := checkBySession(ctx)
@@ -499,7 +546,10 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 			AboutMe:  user.AboutMe,
 		})
 
-		h.l.INFO(logKey, logger.Field{"success", "查看个人信息"})
+		h.l.INFO(logKey, logger.Field{
+			"success",
+			fmt.Sprintf("[%s] 查看个人信息", ctx.ClientIP()),
+		})
 		return
 	case service.ErrInvalidUserAccess:
 		err = fmt.Errorf("[%s] 非法用户访问", ctx.ClientIP())
@@ -509,8 +559,9 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	}
 
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_PROFILE], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_PROFILE], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
 
@@ -528,10 +579,10 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 	var req SendLoginSMSCodeReq
 	var err error
 	var isValid bool
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_SEND_SMSCODE,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_SEND_SMSCODE,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_SEND_SMSCODE]
 
 	err = ctx.Bind(&req)
@@ -550,8 +601,12 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 	if !isValid {
 		//msg.Level = logger.WarnLevel
 		//msg.OtherMsg = fmt.Sprintf("[%s] 输入手机号格式错误")
-		otherMsg := fmt.Sprintf("[%s] 输入手机号格式错误")
-		h.l.WARN(logKey, logger.Field{"phone", otherMsg})
+
+		h.l.WARN(logKey, logger.Field{
+			"phone",
+			fmt.Sprintf("[%s] 输入手机号格式错误", ctx.ClientIP()),
+		})
+
 		ctx.String(http.StatusOK, "手机号格式错误")
 		return
 	}
@@ -568,16 +623,21 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		//TODO: 手机号为敏感信息, 需要单独处理
 		//msg.OtherMsg = fmt.Sprintf("[%s] %s, 验证码发送成功", ctx.ClientIP(), req.Phone)
 
-		otherMsg := fmt.Sprintf("[%s] %s, 验证码发送成功", ctx.ClientIP(), req.Phone)
-		h.l.INFO(logKey, logger.Field{"success", otherMsg})
+		h.l.INFO(logKey, logger.Field{
+			"success",
+			fmt.Sprintf("[%s] %s, 验证码发送成功", ctx.ClientIP(), req.Phone),
+		})
 		return
 	case service.ErrCodeSendTooMany:
-		msg.Level = logger.WarnLevel
+
+		h.l.WARN(logKey, logger.Field{
+			"sms_code",
+			fmt.Sprintf("[%s] 频繁请求发送验证码", ctx.ClientIP()),
+		})
+
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "验证码发送过于频繁，稍后再试",
 		})
-
-		h.l.WARN(logKey, logger.Field{"sms_code", err.Error()})
 		return
 	default:
 		ctx.JSON(http.StatusOK, Result{
@@ -585,8 +645,9 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 		})
 	}
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_SEND_SMSCODE], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_SEND_SMSCODE], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 
 }
@@ -608,10 +669,10 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	var isValid bool
 	var ok bool
 	var user domain.User
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_LOGINSMS,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_LOGINSMS,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_LOGINSMS]
 
 	err = ctx.Bind(&req)
@@ -651,7 +712,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		//TODO: 手机号为敏感信息, 需要单独处理
 		//msg.OtherMsg = fmt.Sprintf("[%s][%s], 输入验证码错误", ctx.ClientIP(), req.Phone)
 
-		h.l.WARN(logKey, logger.Field{"sms_code",
+		h.l.WARN(logKey, logger.Field{"invalid",
 			fmt.Sprintf("[%s][%s], 输入验证码错误", ctx.ClientIP(), req.Phone)})
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "验证码错误, 请重新输入",
@@ -687,16 +748,19 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	//	ctx.ClientIP(), req.Phone, user.Id, user.Email)
 
 	// TODO: 手机号敏感信息，单独处理
-	h.l.INFO(logKey, logger.Field{"success",
-		fmt.Sprintf("[%s][%s][%d][%s], 登录成功", ctx.ClientIP(), req.Phone, user.Id, user.Email)})
+	h.l.INFO(logKey, logger.Field{
+		"success",
+		fmt.Sprintf("[%s][%s][%d][%s], 验证码登录成功", ctx.ClientIP(), req.Phone, user.Id, user.Email),
+	})
 
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "登录成功",
 	})
 	return
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGINSMS], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGINSMS], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
 
@@ -750,10 +814,10 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 // @receiver h
 // @param context
 func (h *UserHandler) Logout(ctx *gin.Context) {
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_LOGOUT,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_LOGOUT,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_LOGOUT]
 
 	session := sessions.Default(ctx)
@@ -772,15 +836,19 @@ func (h *UserHandler) Logout(ctx *gin.Context) {
 
 	//msg.Level = logger.InfoLevel
 	//msg.OtherMsg = fmt.Sprintf("[%s] 退出登录", ctx.ClientIP())
-	h.l.INFO(logKey, logger.Field{"success", fmt.Sprintf("[%s] 退出登录", ctx.ClientIP())})
+	h.l.INFO(logKey, logger.Field{
+		"success",
+		fmt.Sprintf("[%s] 退出登录", ctx.ClientIP()),
+	})
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "用户已退出登录",
 	})
 
 	return
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGOUT], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGOUT], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
 
@@ -791,10 +859,10 @@ ERR:
 // @receiver h
 // @param ctx
 func (h *UserHandler) LogoutWithJWT(ctx *gin.Context) {
-	var msg = UserLogMsg{
-		KeyNum: logger.LOG_LOGOUT,
-		Level:  logger.ErrorLevel,
-	}
+	//var msg = UserLogMsg{
+	//	KeyNum: logger.LOG_LOGOUT,
+	//	Level:  logger.ErrorLevel,
+	//}
 	var logKey = logger.UserLogMsgKey[logger.LOG_LOGOUT]
 
 	err := h.jwtHdl.ClearToken(ctx)
@@ -805,14 +873,18 @@ func (h *UserHandler) LogoutWithJWT(ctx *gin.Context) {
 
 	//msg.Level = logger.InfoLevel
 	//msg.OtherMsg = fmt.Sprintf("[%s] 退出登录", ctx.ClientIP())
-	h.l.INFO(logKey, logger.Field{"success", fmt.Sprintf("[%s] 退出登录", ctx.ClientIP())})
+	h.l.INFO(logKey, logger.Field{
+		"success",
+		fmt.Sprintf("[%s] 退出登录", ctx.ClientIP())},
+	)
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "用户已经退出登录",
 	})
 	return
 ERR:
-	msg.Err = err
-	ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGOUT], msg)
+	//msg.Err = err
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGOUT], msg)
+	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
 
