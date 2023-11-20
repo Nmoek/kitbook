@@ -7,37 +7,56 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"io"
+	"kitbook/internal/web"
+	"kitbook/pkg/logger"
 	"time"
 )
 
 type LogMiddlewareBuilder struct {
-	logFunc       func(ctx context.Context, al AccessLog)
-	pathMaxlen    int
-	bodyMaxlen    int
-	allowReqBody  bool
-	allowRespBody bool
+	logFunc          func(ctx context.Context, al AccessLog, msg *web.UserLogMsg)
+	pathMaxlen       int
+	bodyMaxlen       int
+	allowReqBody     bool
+	allowRespBody    bool
+	allowUserHandler bool
 }
 
-func NewLogMiddlewareBuilder(f func(ctx context.Context, al AccessLog)) *LogMiddlewareBuilder {
+func NewLogMiddlewareBuilder(f func(ctx context.Context, al AccessLog, msg *web.UserLogMsg)) *LogMiddlewareBuilder {
 	return &LogMiddlewareBuilder{
-		logFunc: f,
+		logFunc:    f,
+		pathMaxlen: 1024,
+		bodyMaxlen: 2048,
 	}
 }
 
-// 这里设计全为链式调用
+// 这里设计为链式调用
 func (l *LogMiddlewareBuilder) AllowReqBody() *LogMiddlewareBuilder {
 	l.allowReqBody = true
 	return l
 }
 
-// 这里设计全为链式调用
+// 这里设计为链式调用
 func (l *LogMiddlewareBuilder) AllowRespBody() *LogMiddlewareBuilder {
 	l.allowRespBody = true
 	return l
 }
 
+// 这里设计为链式调用
+func (l *LogMiddlewareBuilder) AllowUserHandler() *LogMiddlewareBuilder {
+	l.allowUserHandler = true
+	return l
+}
+
+// @func: Build
+// @date: 2023-11-19 18:16:50
+// @brief: 处理系统出入口的请求、响应日志打印
+// @author: Kewin Li
+// @receiver l
+// @return gin.HandlerFunc
 func (l *LogMiddlewareBuilder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		var msg *web.UserLogMsg = nil
+
 		path := ctx.Request.URL.Path
 		// TODO: 这里着重考虑的是长度校验，防黑客
 		if len(path) > l.pathMaxlen {
@@ -73,11 +92,29 @@ func (l *LogMiddlewareBuilder) Build() gin.HandlerFunc {
 			}
 		}
 
-		// 防止显式调用Next时的崩溃
+		// ！！注意: 防止显式调用Next时的崩溃
 		defer func() {
 			al.Duration = time.Since(start)
 
-			l.logFunc(ctx, al)
+			if l.allowUserHandler {
+				for _, logKey := range logger.UserLogMsgKey {
+					v, b := ctx.Get(logKey)
+					if b {
+						switch t := v.(type) {
+						case nil:
+							msg = nil
+						case web.UserLogMsg:
+							msg = &t
+						default:
+							msg = nil
+						}
+
+					}
+				}
+
+			}
+
+			l.logFunc(ctx, al, msg)
 
 		}()
 

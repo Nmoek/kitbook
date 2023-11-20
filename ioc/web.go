@@ -53,11 +53,25 @@ func InitGinMiddlewares(client redis.Cmdable,
 		//限流器中间件 1000 QPS/s
 		ratelimit.NewMiddlewareBuilder(limiter).Build(),
 		// 传入要实现的日志打印
-		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
+		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog, msg *web.UserLogMsg) {
 
-			l.DEBUG("", logger.Field{Key: "req", Val: al})
+			l.DEBUG("sys_log", logger.Field{Key: "req", Val: al})
 
-		}).AllowReqBody().AllowRespBody().Build(),
+			if msg != nil {
+				switch msg.Level {
+				case logger.DebugLevel:
+					l.DEBUG(logger.UserLogMsgKey[msg.KeyNum], logger.Field{"err", msg.Err}, logger.Field{"other", msg.OtherMsg})
+				case logger.InfoLevel:
+					l.INFO(logger.UserLogMsgKey[msg.KeyNum], logger.Field{"err", msg.Err}, logger.Field{"other", msg.OtherMsg})
+				case logger.WarnLevel:
+					l.WARN(logger.UserLogMsgKey[msg.KeyNum], logger.Field{"err", msg.Err}, logger.Field{"other", msg.OtherMsg})
+				case logger.ErrorLevel:
+					l.ERROR(logger.UserLogMsgKey[msg.KeyNum], logger.Field{"err", msg.Err}, logger.Field{"other", msg.OtherMsg})
+				}
+
+			}
+
+		}).AllowReqBody().AllowRespBody().AllowUserHandler().Build(),
 		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin_LongShortToken(),
 	}
 

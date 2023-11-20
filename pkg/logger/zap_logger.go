@@ -4,6 +4,37 @@ package logger
 
 import "go.uber.org/zap"
 
+// 与zap库对齐的报错码级别
+const (
+	DebugLevel  = -1
+	InfoLevel   = 0
+	WarnLevel   = 1
+	ErrorLevel  = 2
+	DPanicLevel = 3
+	PanicLevel  = 4
+	FatalLevel  = 5
+)
+
+const (
+	LOG_SIGNUP = iota
+	LOG_LOGIN
+	LOG_LOGINSMS
+	LOG_EDIT
+	LOG_PROFILE
+	LOG_SEND_SMSCODE
+	LOG_LOGOUT
+)
+
+// 用户模块报错key
+var UserLogMsgKey = map[int]string{
+	LOG_SIGNUP:   "signup_log",
+	LOG_LOGIN:    "login_log",
+	LOG_LOGINSMS: "loginsms_log",
+	LOG_EDIT:     "edit_log",
+	LOG_PROFILE:  "profile_log",
+	LOG_LOGOUT:   "logout_log",
+}
+
 type ZapLogger struct {
 	logger *zap.Logger
 }

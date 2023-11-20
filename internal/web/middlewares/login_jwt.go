@@ -141,9 +141,9 @@ func (builder *LoginJWTMiddlewareBuilder) CheckLogin_LongShortToken() gin.Handle
 		//	return
 		//}
 
+		// ！！！注意: 使用长短token后不再去刷新短token的过期时间
 		//token是否即将过期, 是则要刷新
 		//通过token中的exp time 去倒计时判断
-		// ！！！注意: 使用长短token后不再去刷新短token的过期时间
 		//if claims.ExpiresAt.Sub(time.Now()) < 3*time.Minute {
 		//	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(30 * time.Minute))
 		//	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
