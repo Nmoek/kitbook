@@ -4,9 +4,12 @@ package service
 
 import (
 	"context"
+	"errors"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 )
+
+var ErrInvalidUpdate = errors.New("非法操作")
 
 type ArticleServer interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
@@ -32,5 +35,12 @@ func NewNormalArticleService(repo repository.ArticleRepository) ArticleServer {
 // @param ctx
 // @param art
 func (n *NormalArticleService) Save(ctx context.Context, art domain.Article) (int64, error) {
+	if art.Id > 0 {
+		err := n.repo.Update(ctx, art)
+		if err == repository.ErrInvalidUpdate {
+			return -1, ErrInvalidUpdate
+		}
+		return art.Id, err
+	}
 	return n.repo.Create(ctx, art)
 }

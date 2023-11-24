@@ -4,12 +4,16 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
 
+var ErrInvalidUpdate = errors.New("帖子ID或用户ID不匹配")
+
 type ArticleDao interface {
 	Insert(ctx context.Context, art Article) (int64, error)
+	UpdateById(ctx context.Context, art Article) error
 }
 
 type GormArticleDao struct {
@@ -39,6 +43,33 @@ func (g *GormArticleDao) Insert(ctx context.Context, art Article) (int64, error)
 	err := g.db.WithContext(ctx).Create(&art).Error
 
 	return art.Id, err
+}
+
+// @func: UpdateById
+// @date: 2023-11-24 21:02:25
+// @brief:  数据库-修改帖子记录按Id
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param article
+// @return error
+func (g *GormArticleDao) UpdateById(ctx context.Context, art Article) error {
+
+	result := g.db.WithContext(ctx).Model(&Article{}).
+		Where("id = ?", art.Id).
+		Where("author_id = ?", art.AuthorId).
+		Updates(map[string]any{
+			"title":   art.Title,
+			"content": art.Content,
+			"utime":   time.Now().UnixMilli(),
+		})
+
+	if result.RowsAffected <= 0 {
+		return ErrInvalidUpdate
+	}
+
+	return result.Error
+
 }
 
 type Article struct {
