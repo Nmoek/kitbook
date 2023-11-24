@@ -11,12 +11,11 @@ import (
 )
 
 type LogMiddlewareBuilder struct {
-	logFunc          func(ctx context.Context, al AccessLog)
-	pathMaxlen       int
-	bodyMaxlen       int
-	allowReqBody     bool
-	allowRespBody    bool
-	allowUserHandler bool
+	logFunc       func(ctx context.Context, al AccessLog)
+	pathMaxlen    int
+	bodyMaxlen    int
+	allowReqBody  bool
+	allowRespBody bool
 }
 
 func NewLogMiddlewareBuilder(f func(ctx context.Context, al AccessLog)) *LogMiddlewareBuilder {
@@ -39,12 +38,6 @@ func (l *LogMiddlewareBuilder) AllowRespBody() *LogMiddlewareBuilder {
 	return l
 }
 
-// 这里设计为链式调用
-func (l *LogMiddlewareBuilder) AllowUserHandler() *LogMiddlewareBuilder {
-	l.allowUserHandler = true
-	return l
-}
-
 // @func: Build
 // @date: 2023-11-19 18:16:50
 // @brief: 处理系统出入口的请求、响应日志打印
@@ -53,7 +46,6 @@ func (l *LogMiddlewareBuilder) AllowUserHandler() *LogMiddlewareBuilder {
 // @return gin.HandlerFunc
 func (l *LogMiddlewareBuilder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		//var msg *web.UserLogMsg = nil
 
 		path := ctx.Request.URL.Path
 		// TODO: 这里着重考虑的是长度校验，防黑客

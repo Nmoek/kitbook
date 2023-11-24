@@ -2,7 +2,6 @@ package web
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -53,35 +52,40 @@ func (o *OAuth2WechatHandler) RegisterRoutes(server *gin.Engine) {
 func (o *OAuth2WechatHandler) Auth2URL(ctx *gin.Context) {
 
 	logKey := logger.WechatLogMsgKey[logger.LOG_WECHAT_AUTH2URL]
+	fields := logger.Fields{}
+
 	state := uuid.New().String()
 
 	url, err := o.wechatSvc.AuthURL(ctx, state)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "构造跳转URL失败",
-		})
+		fields = fields.Add(logger.String("构造url失败"))
 		goto ERR
 	}
 
 	err = o.setStateCookie(ctx, state)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "系统错误",
-		})
+		fields = fields.Add(logger.String("state设置失败"))
 		goto ERR
 	}
 
-	o.l.INFO(logKey, logger.Field{
-		"success",
-		fmt.Sprintf("[%s] url[%s] ,跳转URL获取成功", ctx.ClientIP(), url),
-	})
+	o.l.INFO(logKey,
+		fields.Add(logger.String("跳转URL获取成功")).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"url", url})...)
+
 	ctx.JSON(http.StatusOK, Result{
 		Data: url,
 	})
 	return
 
 ERR:
-	o.l.ERROR(logKey, logger.Field{"error", err})
+	o.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"url", url})...)
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "系统错误",
+	})
 	return
 }
 
@@ -93,19 +97,15 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 	var user domain.User
 	var info domain.WechtInfo
 	var logKey = logger.WechatLogMsgKey[logger.LOG_WECHAT_CALLBACK]
+	fields := logger.Fields{}
 
 	isValid, err = o.verifyState(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "state解析失败",
-		})
-
+		fields = fields.Add(logger.String("state解析失败"))
 		goto ERR
 	}
 	if !isValid {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "state不合法",
-		})
+		err = errors.New("state不合法")
 		goto ERR
 	}
 
@@ -113,42 +113,45 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 
 	info, err = o.wechatSvc.VerifyCode(ctx, code)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "微信授权失败",
-		})
-
+		fields = fields.Add(logger.String("微信授权失败"))
 		goto ERR
 	}
 
 	user, err = o.userSvc.SignupOrLoginWithWechat(ctx, info)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "系统错误",
-		})
-
+		fields = fields.Add(logger.String("微信登录或注册失败"))
 		goto ERR
 	}
 
 	err = o.jwtHdl.SetTokenWithSsid(ctx, user.Id)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "系统错误",
-		})
-
+		fields = fields.Add(logger.String("token设置失败"))
 		goto ERR
 	}
 
-	o.l.INFO(logKey, logger.Field{
-		"success",
-		fmt.Sprintf("[%s] 微信登录成功", ctx.ClientIP()),
-	})
+	o.l.INFO(logKey,
+		fields.Add(logger.String("微信登录成功")).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"code", code}).
+			Add(logger.Field{"unionID", info.Unionid}).
+			Add(logger.Field{"openID", info.Openid})...)
+
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "微信登录成功",
 	})
 	return
 
 ERR:
-	o.l.ERROR(logKey, logger.Field{"error", err})
+
+	o.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"code", code}).
+			Add(logger.Field{"unionID", info.Unionid}).
+			Add(logger.Field{"openID", info.Openid})...)
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "系统错误",
+	})
 	return
 }
 
