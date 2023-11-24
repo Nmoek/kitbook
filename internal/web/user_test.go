@@ -220,7 +220,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 
 		// 准备服务器, 注册路由
 		server := gin.Default()
-		h.UserRegisterRoutes(server)
+		h.RegisterRoutes(server)
 
 		// 准备请求
 		req := tc.reqBuilder(t)

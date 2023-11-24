@@ -19,12 +19,14 @@ import (
 
 func InitWebService(middlewares []gin.HandlerFunc,
 	userHdl *web.UserHandler,
-	wechatHdl *web.OAuth2WechatHandler) *gin.Engine {
+	wechatHdl *web.OAuth2WechatHandler,
+	articleHdl *web.ArticleHandler) *gin.Engine {
 
 	server := gin.Default()
 	server.Use(middlewares...)
-	userHdl.UserRegisterRoutes(server)
+	userHdl.RegisterRoutes(server)
 	wechatHdl.RegisterRoutes(server)
+	articleHdl.RegisterRoutes(server)
 	return server
 }
 

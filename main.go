@@ -54,7 +54,7 @@ func initViper() {
 //	repo := repository.NewCacheUserRepository(userDao, userCache)
 //	svc := service.NewNormalUserService(repo)
 //	user := web.NewUserHandler(svc, codeSvc)
-//	user.UserRegisterRoutes(server)
+//	user.RegisterRoutes(server)
 //}
 
 //func userSession(server *gin.Engine) {

@@ -23,12 +23,14 @@ func InitWebServer() *gin.Engine {
 		//ioc.InitFreeCache,
 
 		dao.NewGormUserDao,
+		dao.NewGormArticleDao,
 		cache.NewRedisUserCache,
 		cache.NewRedisCodeCache,
 		//cache.NewLocalCodeCache,
 
 		repository.NewCacheUserRepository,
 		repository.NewcodeRepository,
+		repository.NewCacheArticleRepository,
 
 		//  TODO: 如何使用多个不同的限流器
 		ioc.InitLimiter,
@@ -36,11 +38,13 @@ func InitWebServer() *gin.Engine {
 		service.NewNormalUserService,
 		service.NewPhoneCodeService,
 		ioc.InitWechatService,
+		service.NewNormalArticleService,
 
 		ioc.InitLogger,
 		ioc.InitGinMiddlewares,
 		ijwt.NewRedisJWTHandler,
 		web.NewUserHandler,
+		web.NewArticleHandler,
 		web.NewOAuth2WechatHandler,
 		ioc.InitWebService,
 	)

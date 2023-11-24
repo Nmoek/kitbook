@@ -55,13 +55,13 @@ func NewUserHandler(svc service.UserService,
 	}
 }
 
-// @func: UserRegisterRoutes
+// @func: RegisterRoutes
 // @date: 2023-10-04 20:36:47
 // @brief: 用户模块-路由注册
 // @author: Kewin Li
 // @receiver h
 // @param server
-func (h *UserHandler) UserRegisterRoutes(server *gin.Engine) {
+func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	// 注册、登录等功能对应的URL(路由规则)
 	group := server.Group("/users")
 	group.GET("/profile", h.Profile)     //查询用户信息
@@ -122,10 +122,10 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	var isVail bool
 	var user domain.User
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_LOGIN,
+	//	KeyNum: logger.LOG_USER_LOGIN,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_LOGIN]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_LOGIN]
 
 	err = ctx.Bind(&req)
 	if err != nil {
@@ -189,7 +189,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGIN], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_LOGIN], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 
@@ -213,10 +213,10 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 	var isValid bool
 	var user domain.User
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_LOGIN,
+	//	KeyNum: logger.LOG_USER_LOGIN,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_LOGIN]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_LOGIN]
 
 	err = ctx.Bind(&req)
 	if err != nil {
@@ -278,7 +278,7 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGIN], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_LOGIN], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 
 	return
@@ -303,10 +303,10 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	var err error = nil // 默认没有错误
 	var isVail bool
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_SIGNUP, //具体逻辑下具体放置
+	//	KeyNum: logger.LOG_USER_SIGNUP, //具体逻辑下具体放置
 	//	Level:  logger.ErrorLevel, //默认为错误
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_SIGNUP]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_SIGNUP]
 
 	err = ctx.Bind(&req)
 	if err != nil {
@@ -397,7 +397,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_SIGNUP], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_SIGNUP], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
@@ -440,10 +440,10 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	var birthday time.Time
 	var userID int64
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_EDIT,
+	//	KeyNum: logger.LOG_USER_EDIT,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_EDIT]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_EDIT]
 
 	err = ctx.Bind(&req)
 	if err != nil {
@@ -496,7 +496,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_EDIT], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_EDIT], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
@@ -521,10 +521,10 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	var err error
 	var user domain.User
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_PROFILE,
+	//	KeyNum: logger.LOG_USER_PROFILE,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_PROFILE]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_PROFILE]
 	// 1. 用户ID
 	//userID := checkBySession(ctx)
 	userID = checkByJWT(ctx)
@@ -560,7 +560,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_PROFILE], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_PROFILE], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
@@ -580,10 +580,10 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 	var err error
 	var isValid bool
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_SEND_SMSCODE,
+	//	KeyNum: logger.LOG_USER_SENDCODE,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_SEND_SMSCODE]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_SENDCODE]
 
 	err = ctx.Bind(&req)
 	if err != nil {
@@ -646,7 +646,7 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 	}
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_SEND_SMSCODE], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_SENDCODE], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 
@@ -670,10 +670,10 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	var ok bool
 	var user domain.User
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_LOGINSMS,
+	//	KeyNum: logger.LOG_USER_LOGINSMS,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_LOGINSMS]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_LOGINSMS]
 
 	err = ctx.Bind(&req)
 	if err != nil {
@@ -759,7 +759,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	return
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGINSMS], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_LOGINSMS], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
@@ -815,10 +815,10 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 // @param context
 func (h *UserHandler) Logout(ctx *gin.Context) {
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_LOGOUT,
+	//	KeyNum: logger.LOG_USER_LOGOUT,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_LOGOUT]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_LOGOUT]
 
 	session := sessions.Default(ctx)
 	session.Options(sessions.Options{
@@ -847,7 +847,7 @@ func (h *UserHandler) Logout(ctx *gin.Context) {
 	return
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGOUT], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_LOGOUT], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }
@@ -860,10 +860,10 @@ ERR:
 // @param ctx
 func (h *UserHandler) LogoutWithJWT(ctx *gin.Context) {
 	//var msg = UserLogMsg{
-	//	KeyNum: logger.LOG_LOGOUT,
+	//	KeyNum: logger.LOG_USER_LOGOUT,
 	//	Level:  logger.ErrorLevel,
 	//}
-	var logKey = logger.UserLogMsgKey[logger.LOG_LOGOUT]
+	var logKey = logger.UserLogMsgKey[logger.LOG_USER_LOGOUT]
 
 	err := h.jwtHdl.ClearToken(ctx)
 	if err != nil {
@@ -883,7 +883,7 @@ func (h *UserHandler) LogoutWithJWT(ctx *gin.Context) {
 	return
 ERR:
 	//msg.Err = err
-	//ctx.Set(logger.UserLogMsgKey[logger.LOG_LOGOUT], msg)
+	//ctx.Set(logger.UserLogMsgKey[logger.LOG_USER_LOGOUT], msg)
 	h.l.ERROR(logKey, logger.Field{"error", err})
 	return
 }

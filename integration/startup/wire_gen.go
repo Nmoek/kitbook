@@ -8,29 +8,58 @@ package startup
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"kitbook/internal/web"
+	"kitbook/internal/web/jwt"
 	"kitbook/ioc"
 )
 
 // Injectors from wire.go:
 
 func InitWebServer() *gin.Engine {
-	v := ioc.InitGinMiddlewares()
-	db := ioc.InitDB()
-	userDao := dao.NewGormUserDao(db)
 	cmdable := InitRedis()
+	limiter := ioc.InitLimiter(cmdable)
+	jwtHandler := jwt.NewRedisJWTHandler(cmdable)
+	logger := InitLogger()
+	v := ioc.InitGinMiddlewares(cmdable, limiter, jwtHandler, logger)
+	db := InitDB()
+	userDao := dao.NewGormUserDao(db)
 	userCache := cache.NewRedisUserCache(cmdable)
 	userRepository := repository.NewCacheUserRepository(userDao, userCache)
 	userService := service.NewNormalUserService(userRepository)
 	codeCache := cache.NewRedisCodeCache(cmdable)
 	codeRepository := repository.NewcodeRepository(codeCache)
-	smsService := ioc.InitSmsService()
+	smsService := ioc.InitSmsService(limiter)
 	codeService := service.NewPhoneCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService)
-	engine := ioc.InitWebService(v, userHandler)
+	userHandler := web.NewUserHandler(userService, codeService, jwtHandler, logger)
+	wechatService := InitWechatService()
+	oAuth2WechatHandler := web.NewOAuth2WechatHandler(wechatService, userService, jwtHandler, logger)
+	articleDao := dao.NewGormArticleDao(db)
+	articleRepository := repository.NewCacheArticleRepository(articleDao)
+	articleServer := service.NewNormalArticleService(articleRepository)
+	articleHandler := web.NewArticleHandler(articleServer, logger)
+	engine := ioc.InitWebService(v, userHandler, oAuth2WechatHandler, articleHandler)
 	return engine
 }
+
+func NewArticleHandler() *web.ArticleHandler {
+	db := InitDB()
+	articleDao := dao.NewGormArticleDao(db)
+	articleRepository := repository.NewCacheArticleRepository(articleDao)
+	articleServer := service.NewNormalArticleService(articleRepository)
+	logger := InitLogger()
+	articleHandler := web.NewArticleHandler(articleServer, logger)
+	return articleHandler
+}
+
+// wire.go:
+
+var thirdPartySet = wire.NewSet(
+	InitDB,
+	InitRedis,
+	InitLogger,
+)

@@ -52,7 +52,7 @@ func (o *OAuth2WechatHandler) RegisterRoutes(server *gin.Engine) {
 // @param ctx
 func (o *OAuth2WechatHandler) Auth2URL(ctx *gin.Context) {
 
-	logKey := logger.WechatLogMsgKey[logger.LOG_AUTH2URL]
+	logKey := logger.WechatLogMsgKey[logger.LOG_WECHAT_AUTH2URL]
 	state := uuid.New().String()
 
 	url, err := o.wechatSvc.AuthURL(ctx, state)
@@ -92,7 +92,7 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 	var code string
 	var user domain.User
 	var info domain.WechtInfo
-	var logKey = logger.WechatLogMsgKey[logger.LOG_CALLBACK]
+	var logKey = logger.WechatLogMsgKey[logger.LOG_WECHAT_CALLBACK]
 
 	isValid, err = o.verifyState(ctx)
 	if err != nil {

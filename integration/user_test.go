@@ -1,5 +1,5 @@
 // Package integration
-// @Description: 集成测试
+// @Description: 集成测试-用户模块
 package integration
 
 import (

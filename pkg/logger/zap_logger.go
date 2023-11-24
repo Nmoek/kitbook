@@ -15,37 +15,6 @@ const (
 	FatalLevel  = 5
 )
 
-const (
-	// 用户模块
-	LOG_SIGNUP = iota
-	LOG_LOGIN
-	LOG_LOGINSMS
-	LOG_EDIT
-	LOG_PROFILE
-	LOG_SEND_SMSCODE
-	LOG_LOGOUT
-
-	// 微信模块
-	LOG_AUTH2URL
-	LOG_CALLBACK
-)
-
-// 用户模块报错key
-var UserLogMsgKey = map[int]string{
-	LOG_SIGNUP:   "signup_log",
-	LOG_LOGIN:    "login_log",
-	LOG_LOGINSMS: "loginsms_log",
-	LOG_EDIT:     "edit_log",
-	LOG_PROFILE:  "profile_log",
-	LOG_LOGOUT:   "logout_log",
-}
-
-// 微信模块报错key
-var WechatLogMsgKey = map[int]string{
-	LOG_AUTH2URL: "auth2url_log",
-	LOG_CALLBACK: "callback_log",
-}
-
 type ZapLogger struct {
 	logger *zap.Logger
 }
