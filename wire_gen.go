@@ -39,7 +39,7 @@ func InitWebServer() *gin.Engine {
 	oAuth2WechatHandler := web.NewOAuth2WechatHandler(wechatService, userService, jwtHandler, logger)
 	articleDao := dao.NewGormArticleDao(db)
 	articleRepository := repository.NewCacheArticleRepository(articleDao)
-	articleServer := service.NewNormalArticleService(articleRepository)
+	articleServer := service.NewNormalArticleServiceV1(articleRepository)
 	articleHandler := web.NewArticleHandler(articleServer, logger)
 	engine := ioc.InitWebService(v, userHandler, oAuth2WechatHandler, articleHandler)
 	return engine

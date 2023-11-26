@@ -6,17 +6,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
-	"kitbook/internal/web/jwt"
+	ijwt "kitbook/internal/web/jwt"
 	"kitbook/pkg/logger"
 	"net/http"
 )
 
 type ArticleHandler struct {
-	svc service.ArticleServer
+	svc service.ArticleService
 	l   logger.Logger
 }
 
-func NewArticleHandler(svc service.ArticleServer, l logger.Logger) *ArticleHandler {
+func NewArticleHandler(svc service.ArticleService, l logger.Logger) *ArticleHandler {
 	return &ArticleHandler{
 		svc: svc,
 		l:   l,
@@ -26,6 +26,7 @@ func NewArticleHandler(svc service.ArticleServer, l logger.Logger) *ArticleHandl
 func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	group := server.Group("/articles")
 	group.POST("/edit", a.Edit) // 编辑帖子
+	group.POST("/publish", a.Publish)
 
 }
 
@@ -47,21 +48,22 @@ func (a *ArticleHandler) Edit(ctx *gin.Context) {
 	var err error
 	var artId int64
 	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_EDIT]
-	claims := jwt.UserClaims{}
+	claims := ijwt.UserClaims{}
 	fileds := logger.Fields{}
 
 	err = ctx.Bind(&req)
 	if err != nil {
+		fileds = fileds.Add(logger.String("请求解析错误"))
+
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "系统错误",
 		})
 
-		fileds = fileds.Add(logger.Error(err))
 		goto ERR
 	}
 
 	// 作者Id通过jwt来解析
-	claims = ctx.MustGet("user_token").(jwt.UserClaims)
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
 
 	// 保存
 	artId, err = a.svc.Save(ctx, domain.Article{
@@ -75,10 +77,11 @@ func (a *ArticleHandler) Edit(ctx *gin.Context) {
 
 	switch err {
 	case nil:
-		a.l.INFO(logKey, fileds.Add(logger.Field{"success", "帖子保存成功"}).
-			Add(logger.Field{"IP", ctx.ClientIP()}).
-			Add(logger.Int[int64]("artId", req.Id)).
-			Add(logger.Int[int64]("userId", claims.UserID))...)
+		a.l.INFO(logKey,
+			fileds.Add(logger.String("帖子保存成功")).
+				Add(logger.Field{"IP", ctx.ClientIP()}).
+				Add(logger.Int[int64]("artId", req.Id)).
+				Add(logger.Int[int64]("userId", claims.UserID))...)
 
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "保存成功",
@@ -93,16 +96,92 @@ func (a *ArticleHandler) Edit(ctx *gin.Context) {
 		})
 	default:
 		ctx.JSON(http.StatusOK, Result{
-			Msg: "系统错误",
+			Msg: "保存失败",
 		})
 	}
 
-	fileds = fileds.Add(logger.Error(err)).
+ERR:
+	a.l.ERROR(logKey, fileds.Add(logger.Error(err)).
 		Add(logger.Field{"IP", ctx.ClientIP()}).
 		Add(logger.Int[int64]("artId", req.Id)).
-		Add(logger.Int[int64]("userId", claims.UserID))
+		Add(logger.Int[int64]("userId", claims.UserID))...)
+	return
+}
+
+// @func: Publish
+// @date: 2023-11-26 00:00:30
+// @brief: 帖子模块-帖子发表
+// @author: Kewin Li
+// @receiver a
+// @param context
+func (a *ArticleHandler) Publish(ctx *gin.Context) {
+	type Req struct {
+		Id      int64  `json:"id"`
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	var req Req
+	var err error
+	var artId int64
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_EDIT]
+	claims := ijwt.UserClaims{}
+	fileds := logger.Fields{}
+
+	err = ctx.Bind(&req)
+	if err != nil {
+		fileds = fileds.Add(logger.String("请求解析失败"))
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+		goto ERR
+	}
+
+	// 作者Id通过jwt来解析
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	// 发表
+	artId, err = a.svc.Publish(ctx, domain.Article{
+		Id:      req.Id,
+		Title:   req.Title,
+		Content: req.Content,
+		Author: domain.Author{
+			Id: claims.UserID,
+		},
+	})
+
+	switch err {
+	case nil:
+		a.l.INFO(logKey,
+			fileds.Add(logger.String("帖子发表成功")).
+				Add(logger.Field{"IP", ctx.ClientIP()}).
+				Add(logger.Int[int64]("artId", artId)).
+				Add(logger.Int[int64]("userId", claims.UserID))...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "发表成功",
+			Data: artId,
+		})
+
+		return
+	case service.ErrInvalidUpdate:
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "非法操作",
+			Data: artId,
+		})
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "发表失败",
+			Data: artId,
+		})
+	}
 
 ERR:
-	a.l.ERROR(logKey, fileds...)
+	a.l.ERROR(logKey,
+		fileds.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Int[int64]("artId", req.Id)).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
 	return
 }

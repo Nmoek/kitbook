@@ -1,3 +1,5 @@
+//go:build k8s
+
 // Package web
 // @Description: 用户模块-单元测试
 package web
