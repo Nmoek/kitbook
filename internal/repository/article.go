@@ -4,6 +4,7 @@ import (
 	"context"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository/dao"
+	"kitbook/pkg/logger"
 )
 
 var ErrInvalidUpdate = dao.ErrInvalidUpdate
@@ -11,15 +12,33 @@ var ErrInvalidUpdate = dao.ErrInvalidUpdate
 type ArticleRepository interface {
 	Create(ctx context.Context, art domain.Article) (int64, error)
 	Update(ctx context.Context, art domain.Article) error
+	Sync(ctx context.Context, art domain.Article) (int64, error)
 }
 
 type CacheArticleRepository struct {
+	// V0写法 不分库
 	dao dao.ArticleDao
+
+	authorDao dao.ArticleAuthorDao
+	readerDao dao.ArticleReaderDao
+
+	l logger.Logger
 }
 
 func NewCacheArticleRepository(dao dao.ArticleDao) ArticleRepository {
 	return &CacheArticleRepository{
 		dao: dao,
+	}
+}
+
+func NewCacheArticleRepositoryV2(
+	authorDao dao.ArticleAuthorDao,
+	readerDao dao.ArticleReaderDao,
+	l logger.Logger) ArticleRepository {
+	return &CacheArticleRepository{
+		authorDao: authorDao,
+		readerDao: readerDao,
+		l:         l,
 	}
 }
 
@@ -46,6 +65,39 @@ func (c *CacheArticleRepository) Create(ctx context.Context, art domain.Article)
 // @return error
 func (c *CacheArticleRepository) Update(ctx context.Context, art domain.Article) error {
 	return c.dao.UpdateById(ctx, ConvertsDaoArticle(&art))
+}
+
+// @func: Sync(ctx context.Context, art domain.Article)
+// @date: 2023-11-26 19:13:56
+// @brief: 帖子发表
+// @author: Kewin Li
+// @receiver c
+// @param ctx
+// @param art
+// @return int64
+// @return error
+func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (int64, error) {
+
+	var id int64
+	var err error
+
+	if art.Id > 0 {
+		err = c.authorDao.Update(ctx, ConvertsDaoArticle(&art))
+		if err != nil {
+			return art.Id, err
+		}
+
+	} else {
+
+		id, err = c.authorDao.Create(ctx, ConvertsDaoArticle(&art))
+		if err != nil {
+			return 0, err
+		}
+		art.Id = id
+	}
+
+	err = c.readerDao.Upsert(ctx, ConvertsDaoArticle(&art))
+	return art.Id, err
 }
 
 // @func: convertsDominUser

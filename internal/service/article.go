@@ -74,7 +74,7 @@ func (n *NormalArticleService) Save(ctx context.Context, art domain.Article) (in
 // @param art
 // @return error
 func (n *NormalArticleService) PublishV0(ctx context.Context, art domain.Article) (int64, error) {
-	panic("dont use interface!")
+	return n.repo.Sync(ctx, art)
 }
 
 func (n *NormalArticleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
