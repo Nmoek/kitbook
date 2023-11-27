@@ -23,14 +23,14 @@ type NormalArticleService struct {
 	// V0 版本 不分库
 	repo repository.ArticleRepository
 
-	// V1 版本 在service层分库
+	// V1 版本 在service层做数据同步
 	authorRepo repository.ArticleAuthorRepository
 	readerRepo repository.ArticleReaderRepository
 
 	l logger.Logger
 }
 
-func NewNormalArticleServiceV0(repo repository.ArticleRepository, l logger.Logger) ArticleService {
+func NewNormalArticleService(repo repository.ArticleRepository, l logger.Logger) ArticleService {
 	return &NormalArticleService{
 		repo: repo,
 	}

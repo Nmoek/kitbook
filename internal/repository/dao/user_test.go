@@ -1,5 +1,5 @@
 // Package dao
-// @Description: 测试数据库相关接口
+// @Description: 单元测试-用户模块
 package dao
 
 import (

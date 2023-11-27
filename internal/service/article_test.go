@@ -10,6 +10,7 @@ import (
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 	repomocks "kitbook/internal/repository/mocks"
+	"kitbook/pkg/logger"
 	"testing"
 )
 
@@ -222,7 +223,7 @@ func TestNormalArticleService_Publish(t *testing.T) {
 			defer ctrl.Finish()
 
 			authorRepo, readerRepo := tc.mock(ctrl)
-			svc := NewNormalArticleServiceV1(authorRepo, readerRepo)
+			svc := NewNormalArticleServiceV1(authorRepo, readerRepo, logger.NewNopLogger())
 
 			artId, err := svc.Publish(context.Background(), tc.art)
 

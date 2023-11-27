@@ -38,7 +38,7 @@ func InitWebServer() *gin.Engine {
 		service.NewNormalUserService,
 		service.NewPhoneCodeService,
 		ioc.InitWechatService,
-		service.NewNormalArticleServiceV1,
+		service.NewNormalArticleService,
 
 		ioc.InitLogger,
 		ioc.InitGinMiddlewares,

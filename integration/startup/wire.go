@@ -42,7 +42,7 @@ func InitWebServer() *gin.Engine {
 		service.NewNormalUserService,
 		service.NewPhoneCodeService,
 		InitWechatService, //不需要真的开启
-		service.NewNormalArticleServiceV1,
+		service.NewNormalArticleService,
 
 		ioc.InitGinMiddlewares,
 		ijwt.NewRedisJWTHandler,
@@ -61,7 +61,7 @@ func NewArticleHandler() *web.ArticleHandler {
 
 		dao.NewGormArticleDao,
 		repository.NewCacheArticleRepository,
-		service.NewNormalArticleServiceV1,
+		service.NewNormalArticleService,
 		web.NewArticleHandler,
 	)
 
