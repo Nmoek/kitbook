@@ -22,6 +22,7 @@ const (
 const (
 	LOG_ART_EDIT = iota
 	LOG_ART_PUBLISH
+	LOG_ART_WITHDRAW
 )
 
 // 用户模块报错key
@@ -43,6 +44,7 @@ var WechatLogMsgKey = map[int]string{
 
 // 帖子模块报错
 var ArticleLogMsgKey = map[int]string{
-	LOG_ART_EDIT:    "art_edit_log",
-	LOG_ART_PUBLISH: "art_publish_log",
+	LOG_ART_EDIT:     "art_edit_log",
+	LOG_ART_PUBLISH:  "art_publish_log",
+	LOG_ART_WITHDRAW: "art_LOG_ART_WITHDRAW_log",
 }

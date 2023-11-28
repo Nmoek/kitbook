@@ -1,3 +1,5 @@
+// Package web
+// @Description: web层-帖子模块-单元测试
 package web
 
 import (
@@ -17,6 +19,11 @@ import (
 	"testing"
 )
 
+// @func: TestArticleHandler_Publish
+// @date: 2023-11-29 01:03:05
+// @brief: 帖子发表-单元测试
+// @author: Kewin Li
+// @param t
 func TestArticleHandler_Publish(t *testing.T) {
 	testCases := []struct {
 		name string
@@ -153,6 +160,26 @@ func TestArticleHandler_Publish(t *testing.T) {
 			err = json.NewDecoder(recorder.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantRes, res)
+		})
+	}
+}
+
+// @func: TestArticleHandler_Withdraw
+// @date: 2023-11-29 01:03:39
+// @brief: 帖子撤回-单元测试
+// @author: Kewin Li
+// @param t
+func TestArticleHandler_Withdraw(t *testing.T) {
+	// TODO: 撤回帖子单元测试
+	testCases := []struct {
+		name string
+
+		mock func(ctrl *gomock.Controller) service.ArticleService
+	}{}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
 		})
 	}
 }

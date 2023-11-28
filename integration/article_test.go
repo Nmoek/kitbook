@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 	"kitbook/integration/startup"
+	"kitbook/internal/domain"
 	"kitbook/internal/repository/dao"
 	ijwt "kitbook/internal/web/jwt"
 	"net/http"
@@ -92,10 +93,15 @@ func (a *ArticleHandlerSuite) TestEdit() {
 				assert.NoError(t, err)
 				assert.True(t, art.Ctime > 0)
 				assert.True(t, art.Utime > 0)
-				assert.True(t, art.Id > 0)
-				assert.Equal(t, "第一个帖子", art.Title)
-				assert.Equal(t, "第一个帖子的内容", art.Content)
-
+				art.Ctime = 0
+				art.Utime = 0
+				assert.Equal(t, dao.Article{
+					Id:       1,
+					Title:    "第一个帖子",
+					Content:  "第一个帖子的内容",
+					AuthorId: 123,
+					Status:   domain.ArticleStatusUnpblished,
+				}, art)
 			},
 
 			art: article{
@@ -106,17 +112,18 @@ func (a *ArticleHandlerSuite) TestEdit() {
 			wantCode: http.StatusOK,
 			wantRes: result[int64]{
 				Msg:  "保存成功",
-				Data: 1,
+				Data: int64(1),
 			},
 		},
 		{
-			name: "修改帖子, 保存成功",
+			name: "修改已发表帖子, 保存成功",
 			before: func(t *testing.T) {
 				err := a.db.Create(&dao.Article{
 					Id:       2,
 					Title:    "修改前的标题",
 					Content:  "修改前的内容",
 					AuthorId: 123,
+					Status:   domain.ArticleStatusPblished,
 					Ctime:    456,
 					Utime:    789,
 				}).Error
@@ -137,6 +144,7 @@ func (a *ArticleHandlerSuite) TestEdit() {
 					Title:    "修改后的标题",
 					Content:  "修改后的内容",
 					AuthorId: 123,
+					Status:   domain.ArticleStatusUnpblished,
 					Ctime:    456,
 				}, art)
 
@@ -151,7 +159,7 @@ func (a *ArticleHandlerSuite) TestEdit() {
 			wantCode: http.StatusOK,
 			wantRes: result[int64]{
 				Msg:  "保存成功",
-				Data: 2,
+				Data: int64(2),
 			},
 		},
 		{
@@ -161,6 +169,7 @@ func (a *ArticleHandlerSuite) TestEdit() {
 					Id:       3,
 					Title:    "修改前的标题",
 					Content:  "修改前的内容",
+					Status:   domain.ArticleStatusPblished,
 					AuthorId: 666,
 					Ctime:    456,
 					Utime:    789,
@@ -181,6 +190,7 @@ func (a *ArticleHandlerSuite) TestEdit() {
 					Id:       3,
 					Title:    "修改前的标题",
 					Content:  "修改前的内容",
+					Status:   domain.ArticleStatusPblished,
 					AuthorId: 666,
 					Ctime:    456,
 				}, art)
@@ -196,7 +206,7 @@ func (a *ArticleHandlerSuite) TestEdit() {
 			wantCode: http.StatusOK,
 			wantRes: result[int64]{
 				Msg:  "非法操作",
-				Data: -1,
+				Data: int64(-1),
 			},
 		},
 	}

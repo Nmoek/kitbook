@@ -2,18 +2,20 @@ package repository
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository/dao"
 	"kitbook/pkg/logger"
 )
 
-var ErrInvalidUpdate = dao.ErrInvalidUpdate
+var ErrUserMismatch = dao.ErrUserMismatch
 
 type ArticleRepository interface {
 	Create(ctx context.Context, art domain.Article) (int64, error)
 	Update(ctx context.Context, art domain.Article) error
 	Sync(ctx context.Context, art domain.Article) (int64, error)
+	SyncStatus(ctx *gin.Context, artId int64, authorId int64, status domain.ArticleStatus) error
 }
 
 type CacheArticleRepository struct {
@@ -73,7 +75,7 @@ func (c *CacheArticleRepository) Update(ctx context.Context, art domain.Article)
 
 // @func: Sync(ctx context.Context, art domain.Article)
 // @date: 2023-11-26 19:13:56
-// @brief: 帖子发表-数据同步-非事务实现
+// @brief: 帖子发表-数据同步-非事务实现(不同库)
 // @author: Kewin Li
 // @receiver c
 // @param ctx
@@ -107,7 +109,7 @@ func (c *CacheArticleRepository) SyncV1(ctx context.Context, art domain.Article)
 
 // @func: Sync(ctx context.Context, art domain.Article)
 // @date: 2023-11-26 19:13:56
-// @brief: 帖子发表-数据同步-非事务实现
+// @brief: 帖子发表-数据同步-事务实现(同库不同表)
 // @author: Kewin Li
 // @receiver c
 // @param ctx
@@ -166,6 +168,21 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 	return c.dao.Sync(ctx, ConvertsDaoArticle(&art))
 }
 
+// @func: SyncStatus
+// @date: 2023-11-28 12:52:50
+// @brief: 数据转发-状态同步-dao层同步
+// @author: Kewin Li
+// @receiver c
+// @param ctx
+// @param artId
+// @param authorId
+// @param status
+// @return int64
+// @return error
+func (c *CacheArticleRepository) SyncStatus(ctx *gin.Context, artId int64, authorId int64, status domain.ArticleStatus) error {
+	return c.dao.SyncStatus(ctx, artId, authorId, status.ToUint8())
+}
+
 // @func: convertsDominUser
 // @date: 2023-10-09 02:08:11
 // @brief: 转化为domin的Article结构体
@@ -188,5 +205,6 @@ func ConvertsDaoArticle(art *domain.Article) dao.Article {
 		Title:    art.Title,
 		Content:  art.Content,
 		AuthorId: art.Author.Id,
+		Status:   art.Status.ToUint8(),
 	}
 }

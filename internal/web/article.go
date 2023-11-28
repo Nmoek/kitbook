@@ -25,8 +25,9 @@ func NewArticleHandler(svc service.ArticleService, l logger.Logger) *ArticleHand
 
 func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	group := server.Group("/articles")
-	group.POST("/edit", a.Edit) // 编辑帖子
-	group.POST("/publish", a.Publish)
+	group.POST("/edit", a.Edit)         // 编辑帖子
+	group.POST("/publish", a.Publish)   // 发表帖子
+	group.POST("/withdraw", a.Withdraw) // 撤回帖子(更改可见状态)
 
 }
 
@@ -174,6 +175,84 @@ func (a *ArticleHandler) Publish(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "发表失败",
 			Data: artId,
+		})
+	}
+
+ERR:
+	a.l.ERROR(logKey,
+		fileds.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Int[int64]("artId", req.Id)).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+	return
+}
+
+// @func: Withdraw
+// @date: 2023-11-28 12:33:42
+// @brief: 帖子模块-帖子撤回
+// @author: Kewin Li
+// @receiver a
+// @param context
+func (a *ArticleHandler) Withdraw(ctx *gin.Context) {
+	type Req struct {
+		Id      int64  `json:"id"`
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	var req Req
+	var err error
+
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_WITHDRAW]
+	claims := ijwt.UserClaims{}
+	fileds := logger.Fields{}
+
+	err = ctx.Bind(&req)
+	if err != nil {
+		fileds = fileds.Add(logger.String("请求解析失败"))
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+		goto ERR
+	}
+
+	// 作者Id通过jwt来解析
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	// 撤回
+	err = a.svc.Withdraw(ctx, domain.Article{
+		Id:      req.Id,
+		Title:   req.Title,
+		Content: req.Content,
+		Author: domain.Author{
+			Id: claims.UserID,
+		},
+	})
+
+	switch err {
+	case nil:
+		a.l.INFO(logKey,
+			fileds.Add(logger.String("帖子撤回成功")).
+				Add(logger.Field{"IP", ctx.ClientIP()}).
+				Add(logger.Int[int64]("artId", req.Id)).
+				Add(logger.Int[int64]("userId", claims.UserID))...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "撤回成功",
+			Data: req.Id,
+		})
+		return
+	case service.ErrInvalidUpdate:
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "非法操作",
+			Data: req.Id,
+		})
+
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "撤回失败",
+			Data: req.Id,
 		})
 	}
 

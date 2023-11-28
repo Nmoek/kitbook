@@ -5,17 +5,19 @@ package dao
 import (
 	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
 )
 
-var ErrInvalidUpdate = errors.New("帖子ID或用户ID不匹配")
+var ErrUserMismatch = errors.New("帖子ID和用户ID不匹配")
 
 type ArticleDao interface {
 	Insert(ctx context.Context, art Article) (int64, error)
 	UpdateById(ctx context.Context, art Article) error
 	Sync(ctx context.Context, art Article) (int64, error)
+	SyncStatus(ctx *gin.Context, artId int64, authorId int64, status uint8) error
 }
 
 type GormArticleDao struct {
@@ -30,7 +32,7 @@ func NewGormArticleDao(db *gorm.DB) ArticleDao {
 
 // @func: Insert
 // @date: 2023-11-23 00:59:39
-// @brief: 数据库-新建帖子记录
+// @brief: 新建帖子记录
 // @author: Kewin Li
 // @receiver g
 // @param ctx
@@ -63,11 +65,12 @@ func (g *GormArticleDao) UpdateById(ctx context.Context, art Article) error {
 		Updates(map[string]any{
 			"title":   art.Title,
 			"content": art.Content,
+			"status":  art.Status,
 			"utime":   time.Now().UnixMilli(),
 		})
 
 	if result.RowsAffected <= 0 {
-		return ErrInvalidUpdate
+		return ErrUserMismatch
 	}
 
 	return result.Error
@@ -200,11 +203,55 @@ func (g *GormArticleDao) Sync(ctx context.Context, art Article) (int64, error) {
 	return id, err
 }
 
+// @func: SyncStatus
+// @date: 2023-11-29 00:24:10
+// @brief: 帖子状态同步-闭包实现事务
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param artId
+// @param authorId
+// @param status
+// @return int64
+// @return error
+func (g *GormArticleDao) SyncStatus(ctx *gin.Context, artId int64, authorId int64, status uint8) error {
+	now := time.Now().UnixMilli()
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 修改制作库
+		res := tx.Model(&Article{}).
+			Where("id = ?", artId).
+			Where("author_id = ?", authorId).
+			Updates(map[string]any{
+				"status": status,
+				"utime":  now,
+			})
+
+		if res.Error != nil {
+			return res.Error
+		}
+
+		// 更新无效，说明帖子ID和作者ID不匹配
+		if res.RowsAffected <= 0 {
+			return ErrUserMismatch
+		}
+
+		// 2. 修改线上库
+		return tx.Model(&PublishedArticle{}).
+			Where("id = ?", artId).
+			Updates(map[string]any{
+				"status": status,
+				"utime":  now,
+			}).Error
+	})
+
+}
+
 type Article struct {
 	Id       int64  `gorm:"primaryKey, autoIncrement"`
 	Title    string `gorm:"type=varchar(256)"`
 	Content  string `gorm:"type=BLOB"`
 	AuthorId int64  `gorm:"index"`
+	Status   uint8
 	Ctime    int64
 	Utime    int64
 }

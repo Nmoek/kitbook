@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 	"kitbook/pkg/logger"
@@ -15,6 +16,7 @@ var ErrInvalidUpdate = errors.New("非法操作")
 type ArticleService interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
+	Withdraw(ctx *gin.Context, art domain.Article) error
 }
 
 // NormalArticleService
@@ -55,9 +57,12 @@ func NewNormalArticleServiceV1(
 // @param ctx
 // @param art
 func (n *NormalArticleService) Save(ctx context.Context, art domain.Article) (int64, error) {
+	// 帖子未发表
+	art.Status = domain.ArticleStatusUnpblished
+
 	if art.Id > 0 {
 		err := n.repo.Update(ctx, art)
-		if err == repository.ErrInvalidUpdate {
+		if err == repository.ErrUserMismatch {
 			return -1, ErrInvalidUpdate
 		}
 		return art.Id, err
@@ -77,6 +82,14 @@ func (n *NormalArticleService) PublishV0(ctx context.Context, art domain.Article
 	return n.repo.Sync(ctx, art)
 }
 
+// @func: Publish(ctx context.Context, art domain.Article)
+// @date: 2023-11-25 23:57:48
+// @brief: 帖子服务-帖子发表-service层同步数据
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param art
+// @return error
 func (n *NormalArticleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
 	// 1. 先存制作库
 	// 2. 再存线上库
@@ -108,4 +121,17 @@ func (n *NormalArticleService) Publish(ctx context.Context, art domain.Article) 
 				Add(logger.Int[int64]("authId", art.Author.Id))...)
 	}
 	return art.Id, err
+}
+
+// @func: Withdraw
+// @date: 2023-11-28 12:49:25
+// @brief: 帖子服务-帖子撤回
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param art
+// @return int64
+// @return error
+func (n *NormalArticleService) Withdraw(ctx *gin.Context, art domain.Article) error {
+	return n.repo.SyncStatus(ctx, art.Id, art.Author.Id, domain.ArticleStatusPrivate)
 }
