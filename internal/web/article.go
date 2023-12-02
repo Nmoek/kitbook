@@ -174,7 +174,7 @@ func (a *ArticleHandler) Publish(ctx *gin.Context) {
 	default:
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "发表失败",
-			Data: artId,
+			Data: -1,
 		})
 	}
 

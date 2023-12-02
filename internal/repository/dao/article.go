@@ -65,7 +65,6 @@ func (g *GormArticleDao) UpdateById(ctx context.Context, art Article) error {
 		Updates(map[string]any{
 			"title":   art.Title,
 			"content": art.Content,
-			"status":  art.Status,
 			"utime":   time.Now().UnixMilli(),
 		})
 
@@ -153,21 +152,21 @@ func (g *GormArticleDao) SyncV1(ctx context.Context, art Article) (int64, error)
 // @return int64
 // @return error
 func (g *GormArticleDao) Sync(ctx context.Context, art Article) (int64, error) {
-	id := art.Id
-	// 开启事务
+
+	// Gorm闭包开启事务
 	err := g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 
 		var err error
-		dao := NewGormArticleAuthorDao(tx)
+		dao := NewGormArticleDao(tx)
 
-		if id > 0 {
-			err = dao.Update(ctx, art)
+		if art.Id > 0 {
+			// id存在视为更新
+			err = dao.UpdateById(ctx, art)
 
 		} else {
+			// id不存在视为新建
+			art.Id, err = dao.Insert(ctx, art)
 
-			id, err = dao.Create(ctx, art)
-
-			art.Id = id
 		}
 		if err != nil {
 			return err
@@ -178,8 +177,9 @@ func (g *GormArticleDao) Sync(ctx context.Context, art Article) (int64, error) {
 		art.Ctime = now
 		publishArt := PublishedArticle(art)
 
-		// 操作另外一张表
+		// 操作线上表
 		// id冲突时处理
+		// TODO: 该函数的作用是?
 		err = tx.Clauses(clause.OnConflict{
 			// MYSQL:
 			// INSERT xxx DUPLICATE KEY SET `title` = ?
@@ -200,7 +200,7 @@ func (g *GormArticleDao) Sync(ctx context.Context, art Article) (int64, error) {
 		return err
 	})
 
-	return id, err
+	return art.Id, err
 }
 
 // @func: SyncStatus
@@ -247,13 +247,13 @@ func (g *GormArticleDao) SyncStatus(ctx *gin.Context, artId int64, authorId int6
 }
 
 type Article struct {
-	Id       int64  `gorm:"primaryKey, autoIncrement"`
-	Title    string `gorm:"type=varchar(256)"`
-	Content  string `gorm:"type=BLOB"`
-	AuthorId int64  `gorm:"index"`
-	Status   uint8
-	Ctime    int64
-	Utime    int64
+	Id       int64  `gorm:"primaryKey, autoIncrement" bson:"id,omitempty"`
+	Title    string `gorm:"type=varchar(256)" bson:"title,omitempty"`
+	Content  string `gorm:"type=BLOB" bson:"content,omitempty"`
+	AuthorId int64  `gorm:"index" bson:"author_id,omitempty"`
+	Status   uint8  `bson:"status,omitempty"`
+	Ctime    int64  `bson:"ctime,omitempty"`
+	Utime    int64  `bson:"utime,omitempty"`
 }
 
 // 同步数据-同库不同表 使用衍生类型拓展一张一样的表结构

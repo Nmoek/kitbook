@@ -22,12 +22,13 @@ type ArticleService interface {
 // NormalArticleService
 // @Description: 普通帖子服务(免费、免登录)
 type NormalArticleService struct {
-	// V0 版本 不分库
+	//  不分库
 	repo repository.ArticleRepository
 
-	// V1 版本 在service层做数据同步
+	/// V1 版本 在service层做数据同步
 	authorRepo repository.ArticleAuthorRepository
 	readerRepo repository.ArticleReaderRepository
+	///
 
 	l logger.Logger
 }
@@ -38,6 +39,14 @@ func NewNormalArticleService(repo repository.ArticleRepository, l logger.Logger)
 	}
 }
 
+// @func: NewNormalArticleServiceV1
+// @date: 2023-11-25 23:57:48
+// @brief: 依赖注入-service层同步数据服务
+// @author: Kewin Li
+// @param authorRepo
+// @param readerRepo
+// @param l
+// @return ArticleService
 func NewNormalArticleServiceV1(
 	authorRepo repository.ArticleAuthorRepository,
 	readerRepo repository.ArticleReaderRepository,
@@ -58,7 +67,7 @@ func NewNormalArticleServiceV1(
 // @param art
 func (n *NormalArticleService) Save(ctx context.Context, art domain.Article) (int64, error) {
 	// 帖子未发表
-	art.Status = domain.ArticleStatusUnpblished
+	art.Status = domain.ArticleStatusUnpublished
 
 	if art.Id > 0 {
 		err := n.repo.Update(ctx, art)
@@ -72,14 +81,19 @@ func (n *NormalArticleService) Save(ctx context.Context, art domain.Article) (in
 
 // @func: Publish(ctx context.Context, art domain.Article)
 // @date: 2023-11-25 23:57:48
-// @brief: 帖子服务-帖子发表
+// @brief: 帖子服务-帖子发表-dao层数据同步
 // @author: Kewin Li
 // @receiver n
 // @param ctx
 // @param art
 // @return error
-func (n *NormalArticleService) PublishV0(ctx context.Context, art domain.Article) (int64, error) {
-	return n.repo.Sync(ctx, art)
+func (n *NormalArticleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
+	art.Status = domain.ArticleStatusPublished
+	id, err := n.repo.Sync(ctx, art)
+	if err == repository.ErrUserMismatch {
+		return -1, ErrInvalidUpdate
+	}
+	return id, err
 }
 
 // @func: Publish(ctx context.Context, art domain.Article)
@@ -90,7 +104,7 @@ func (n *NormalArticleService) PublishV0(ctx context.Context, art domain.Article
 // @param ctx
 // @param art
 // @return error
-func (n *NormalArticleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
+func (n *NormalArticleService) PublishV1(ctx context.Context, art domain.Article) (int64, error) {
 	// 1. 先存制作库
 	// 2. 再存线上库
 	var id int64

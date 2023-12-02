@@ -55,11 +55,9 @@ func InitWebServer() *gin.Engine {
 	return gin.Default()
 }
 
-func NewArticleHandler() *web.ArticleHandler {
+func NewArticleHandler(dao dao.ArticleDao) *web.ArticleHandler {
 	wire.Build(
 		thirdPartySet,
-
-		dao.NewGormArticleDao,
 		repository.NewCacheArticleRepository,
 		service.NewNormalArticleService,
 		web.NewArticleHandler,

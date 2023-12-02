@@ -19,6 +19,14 @@ services:
     ports:
       - "6379:6379"
 
+  mongoDB:
+    image: "bitnami/mongodb:latest"
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
 
   etcd:
     image: "bitnami/etcd:latest"
@@ -27,3 +35,4 @@ services:
       - ALLOW_NONE_AUTHENTICATION=yes
     ports:
       - "2379:2379"
+

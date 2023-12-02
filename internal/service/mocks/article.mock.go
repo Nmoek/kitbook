@@ -42,6 +42,7 @@ func (m *MockArticleService) EXPECT() *MockArticleServiceMockRecorder {
 
 // Publish mocks base method.
 func (m *MockArticleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
+
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Publish", ctx, art)
 	ret0, _ := ret[0].(int64)

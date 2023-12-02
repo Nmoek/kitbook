@@ -35,6 +35,15 @@ func NewCacheArticleRepository(dao dao.ArticleDao) ArticleRepository {
 	}
 }
 
+// @func: NewCacheArticleRepositoryV2
+// @date: 2023-12-02 18:28:36
+// @brief: 依赖注入-repository层同步数据服务
+// @author: Kewin Li
+// @param authorDao
+// @param readerDao
+// @param db
+// @param l
+// @return *CacheArticleRepository
 func NewCacheArticleRepositoryV2(
 	authorDao dao.ArticleAuthorDao,
 	readerDao dao.ArticleReaderDao,
@@ -75,7 +84,7 @@ func (c *CacheArticleRepository) Update(ctx context.Context, art domain.Article)
 
 // @func: Sync(ctx context.Context, art domain.Article)
 // @date: 2023-11-26 19:13:56
-// @brief: 帖子发表-数据同步-非事务实现(不同库)
+// @brief: 帖子发表-数据同步-repository非事务实现(不同库)
 // @author: Kewin Li
 // @receiver c
 // @param ctx
@@ -109,7 +118,7 @@ func (c *CacheArticleRepository) SyncV1(ctx context.Context, art domain.Article)
 
 // @func: Sync(ctx context.Context, art domain.Article)
 // @date: 2023-11-26 19:13:56
-// @brief: 帖子发表-数据同步-事务实现(同库不同表)
+// @brief: 帖子发表-数据同步-repository事务实现(同库不同表)
 // @author: Kewin Li
 // @receiver c
 // @param ctx
@@ -157,7 +166,7 @@ func (c *CacheArticleRepository) SyncV2(ctx context.Context, art domain.Article)
 
 // @func: Sync
 // @date: 2023-11-27 12:45:29
-// @brief: 数据转发-数据同步-dao层同步
+// @brief: 帖子发表-数据同步-dao层同步
 // @author: Kewin Li
 // @receiver c
 // @param ctx
@@ -170,7 +179,7 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 
 // @func: SyncStatus
 // @date: 2023-11-28 12:52:50
-// @brief: 数据转发-状态同步-dao层同步
+// @brief: 帖子撤回-状态同步-dao层同步
 // @author: Kewin Li
 // @receiver c
 // @param ctx
