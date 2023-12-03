@@ -205,11 +205,11 @@ func (a *ArticleHandler) Withdraw(ctx *gin.Context) {
 
 	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_WITHDRAW]
 	claims := ijwt.UserClaims{}
-	fileds := logger.Fields{}
+	fields := logger.Fields{}
 
 	err = ctx.Bind(&req)
 	if err != nil {
-		fileds = fileds.Add(logger.String("请求解析失败"))
+		fields = fields.Add(logger.String("请求解析失败"))
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "系统错误",
 		})
@@ -233,7 +233,7 @@ func (a *ArticleHandler) Withdraw(ctx *gin.Context) {
 	switch err {
 	case nil:
 		a.l.INFO(logKey,
-			fileds.Add(logger.String("帖子撤回成功")).
+			fields.Add(logger.String("帖子撤回成功")).
 				Add(logger.Field{"IP", ctx.ClientIP()}).
 				Add(logger.Int[int64]("artId", req.Id)).
 				Add(logger.Int[int64]("userId", claims.UserID))...)
@@ -246,19 +246,19 @@ func (a *ArticleHandler) Withdraw(ctx *gin.Context) {
 	case service.ErrInvalidUpdate:
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "非法操作",
-			Data: req.Id,
+			Data: -1,
 		})
 
 	default:
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "撤回失败",
-			Data: req.Id,
+			Data: -1,
 		})
 	}
 
 ERR:
 	a.l.ERROR(logKey,
-		fileds.Add(logger.Error(err)).
+		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Int[int64]("artId", req.Id)).
 			Add(logger.Int[int64]("userId", claims.UserID))...)

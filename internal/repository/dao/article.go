@@ -65,6 +65,7 @@ func (g *GormArticleDao) UpdateById(ctx context.Context, art Article) error {
 		Updates(map[string]any{
 			"title":   art.Title,
 			"content": art.Content,
+			"status":  art.Status,
 			"utime":   time.Now().UnixMilli(),
 		})
 

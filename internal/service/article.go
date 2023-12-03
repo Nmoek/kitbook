@@ -147,5 +147,9 @@ func (n *NormalArticleService) PublishV1(ctx context.Context, art domain.Article
 // @return int64
 // @return error
 func (n *NormalArticleService) Withdraw(ctx *gin.Context, art domain.Article) error {
-	return n.repo.SyncStatus(ctx, art.Id, art.Author.Id, domain.ArticleStatusPrivate)
+	err := n.repo.SyncStatus(ctx, art.Id, art.Author.Id, domain.ArticleStatusPrivate)
+	if err == repository.ErrUserMismatch {
+		return ErrInvalidUpdate
+	}
+	return err
 }

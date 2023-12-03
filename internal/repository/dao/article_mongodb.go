@@ -108,6 +108,31 @@ func (m *MongoDBArticleDAO) Sync(ctx context.Context, art Article) (int64, error
 }
 
 func (m *MongoDBArticleDAO) SyncStatus(ctx *gin.Context, artId int64, authorId int64, status uint8) error {
-	//TODO implement me
-	panic("implement me")
+
+	now := time.Now().UnixMilli()
+	filter := bson.M{
+		"id":        artId,
+		"author_id": authorId,
+	}
+
+	updateRes, err := m.produceCol.UpdateOne(ctx, filter, bson.D{{"$set", bson.M{
+		"status": status,
+		"utime":  now,
+	}}})
+
+	if err != nil {
+		return err
+	}
+
+	if updateRes.ModifiedCount <= 0 {
+		return ErrUserMismatch
+	}
+
+	_, err = m.liveCol.UpdateOne(ctx, filter, bson.D{{"$set", bson.M{
+		"status": status,
+		"utime":  now,
+	}}})
+
+	// 线上库遵循啊UPSERT语义
+	return err
 }

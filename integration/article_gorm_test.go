@@ -35,7 +35,7 @@ func (a *ArticleHandlerSuite) SetupSuite() {
 
 	a.db = startup.InitDB()
 	hdl := startup.NewArticleHandler(dao.NewGormArticleDao(a.db))
-	//a.server = startup.InitWebServer()
+
 	server := gin.Default()
 	server.Use(func(ctx *gin.Context) {
 		ctx.Set("user_token", ijwt.UserClaims{
@@ -116,7 +116,7 @@ func (a *ArticleHandlerSuite) TestEdit() {
 			},
 		},
 		{
-			name: "修改已发表帖子, 保存成功",
+			name: "修改未发表帖子, 保存成功",
 			before: func(t *testing.T) {
 				err := a.db.Create(&dao.Article{
 					Id:       2,
@@ -463,6 +463,187 @@ func (a *ArticleHandlerSuite) TestPublish() {
 
 			// 发表接口测试
 			req, err := http.NewRequest(http.MethodPost, "/articles/publish", bytes.NewReader(reqBody))
+			req.Header.Set("Content-Type", "application/json")
+			assert.NoError(t, err)
+
+			recorder := httptest.NewRecorder()
+
+			// 执行请求
+			a.server.ServeHTTP(recorder, req)
+
+			var res Result[int64]
+			err = json.NewDecoder(recorder.Body).Decode(&res)
+			assert.Equal(t, tc.wantCode, recorder.Code)
+			assert.Equal(t, tc.wantRes, res)
+
+		})
+
+	}
+
+}
+
+// @func: TestWithdraw
+// @date: 2023-12-02 23:21:55
+// @brief: 帖子撤回
+// @author: Kewin Li
+// @receiver a
+func (a *ArticleHandlerSuite) TestWithdraw() {
+	t := a.T()
+
+	testCases := []struct {
+		name string
+
+		before func(t *testing.T)
+
+		after func(t *testing.T)
+
+		art Article
+
+		wantCode int
+		wantRes  Result[int64]
+	}{
+		{
+			name: "撤回帖子, 撤回成功",
+			before: func(t *testing.T) {
+
+				art := dao.Article{
+					Id:       1,
+					Title:    "撤回帖子的标题",
+					Content:  "撤回帖子的内容",
+					Status:   domain.ArticleStatusPublished,
+					AuthorId: 123,
+					Ctime:    666,
+					Utime:    666,
+				}
+
+				err := a.db.Create(art).Error
+				assert.NoError(t, err)
+
+				err = a.db.Create(dao.PublishedArticle(art)).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+
+				var artProduce dao.Article
+				err := a.db.Where("id = ?", 1).First(&artProduce).Error
+				assert.NoError(t, err)
+				assert.True(t, artProduce.Ctime > 0)
+				assert.True(t, artProduce.Utime > 666)
+				artProduce.Ctime = 0
+				artProduce.Utime = 0
+				assert.Equal(t, dao.Article{
+					Id:       1,
+					Title:    "撤回帖子的标题",
+					Content:  "撤回帖子的内容",
+					Status:   domain.ArticleStatusPrivate,
+					AuthorId: 123,
+				}, artProduce)
+
+				var artLive dao.PublishedArticle
+				err = a.db.Where("id = ?", 1).First(&artLive).Error
+				assert.NoError(t, err)
+				assert.True(t, artLive.Ctime > 0)
+				assert.True(t, artLive.Utime > 666)
+				artLive.Ctime = 0
+				artLive.Utime = 0
+				assert.Equal(t, dao.PublishedArticle{
+					Id:       1,
+					Title:    "撤回帖子的标题",
+					Content:  "撤回帖子的内容",
+					Status:   domain.ArticleStatusPrivate,
+					AuthorId: 123,
+				}, artLive)
+
+			},
+
+			art: Article{
+				Id: 1,
+			},
+
+			wantCode: http.StatusOK,
+			wantRes: Result[int64]{
+				Msg:  "撤回成功",
+				Data: int64(1),
+			},
+		},
+		{
+			name: "撤回别人帖子, 撤回失败",
+			before: func(t *testing.T) {
+
+				art := dao.Article{
+					Id:       3,
+					Title:    "修改前的标题",
+					Content:  "修改前的内容",
+					Status:   domain.ArticleStatusPublished,
+					AuthorId: 456,
+					Ctime:    777,
+					Utime:    777,
+				}
+
+				err := a.db.Create(art).Error
+				assert.NoError(t, err)
+
+				err = a.db.Create(dao.PublishedArticle(art)).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+
+				var artProduce dao.Article
+				err := a.db.Where("id = ?", 3).First(&artProduce).Error
+				assert.NoError(t, err)
+				assert.True(t, artProduce.Ctime > 0)
+				assert.True(t, artProduce.Utime == 777)
+				artProduce.Ctime = 0
+				artProduce.Utime = 0
+				assert.Equal(t, dao.Article{
+					Id:       3,
+					Title:    "修改前的标题",
+					Content:  "修改前的内容",
+					Status:   domain.ArticleStatusPublished,
+					AuthorId: 456,
+				}, artProduce)
+
+				var artLive dao.PublishedArticle
+				err = a.db.Where("id = ?", 3).First(&artLive).Error
+				assert.NoError(t, err)
+				assert.True(t, artLive.Ctime > 0)
+				assert.True(t, artLive.Utime == 777)
+				artLive.Ctime = 0
+				artLive.Utime = 0
+				assert.Equal(t, dao.PublishedArticle{
+					Id:       3,
+					Title:    "修改前的标题",
+					Content:  "修改前的内容",
+					Status:   domain.ArticleStatusPublished,
+					AuthorId: 456,
+				}, artLive)
+
+			},
+
+			art: Article{
+				Id:      3,
+				Title:   "修改后的标题",
+				Content: "修改后的内容",
+			},
+
+			wantCode: http.StatusOK,
+			wantRes: Result[int64]{
+				Msg:  "非法操作",
+				Data: int64(-1),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.before(t)
+			defer tc.after(t)
+
+			reqBody, err := json.Marshal(&tc.art)
+			assert.NoError(t, err)
+
+			// 发表接口测试
+			req, err := http.NewRequest(http.MethodPost, "/articles/withdraw", bytes.NewReader(reqBody))
 			req.Header.Set("Content-Type", "application/json")
 			assert.NoError(t, err)
 
