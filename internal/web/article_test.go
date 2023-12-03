@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // @func: TestArticleHandler_Publish
@@ -110,7 +111,7 @@ func TestArticleHandler_Publish(t *testing.T) {
 			wantCode: http.StatusOK,
 			wantRes: Result{
 				Msg:  "发表失败",
-				Data: float64(777), // json中数字转为go类型默认是float64
+				Data: float64(-1), // json中数字转为go类型默认是float64
 			},
 		},
 		{
@@ -182,4 +183,130 @@ func TestArticleHandler_Withdraw(t *testing.T) {
 
 		})
 	}
+}
+
+// @func: TestArticleHandler_List
+// @date: 2023-12-04 00:58:47
+// @brief: 创作者列表
+// @author: Kewin Li
+// @param t
+func TestArticleHandler_List(t *testing.T) {
+
+	now := time.Now()
+	testCases := []struct {
+		name string
+
+		mock func(ctrl *gomock.Controller) service.ArticleService
+
+		reqBody string
+
+		wantCode int
+		wantRes  Result
+	}{
+		{
+			name: "创作者列表查询成功",
+
+			mock: func(ctrl *gomock.Controller) service.ArticleService {
+				svc := svcmocks.NewMockArticleService(ctrl)
+
+				svc.EXPECT().GetByAuthor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Return([]domain.Article{
+						{
+							Id:     1,
+							Author: domain.Author{Id: 123},
+							Status: domain.ArticleStatusPublished,
+							Ctime:  now,
+							Utime:  now,
+						}, {
+							Id:     2,
+							Author: domain.Author{Id: 123},
+							Status: domain.ArticleStatusPublished,
+							Ctime:  now,
+							Utime:  now,
+						}, {
+							Id:     3,
+							Author: domain.Author{Id: 123},
+							Status: domain.ArticleStatusPublished,
+							Ctime:  now,
+							Utime:  now,
+						},
+					}, nil)
+				return svc
+			},
+
+			reqBody: `{
+"limit": 3,
+"offset": 0
+}`,
+			wantCode: http.StatusOK,
+			wantRes: Result{
+				Msg: "查询成功",
+				Data: []ArticleVo{
+					{
+						Id:     1,
+						Status: domain.ArticleStatusPublished,
+						Ctime:  now.Format(time.DateTime),
+						Utime:  now.Format(time.DateTime),
+					}, {
+						Id:     2,
+						Status: domain.ArticleStatusPublished,
+						Ctime:  now.Format(time.DateTime),
+						Utime:  now.Format(time.DateTime),
+					}, {
+						Id:     3,
+						Status: domain.ArticleStatusPublished,
+						Ctime:  now.Format(time.DateTime),
+						Utime:  now.Format(time.DateTime),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			svc := tc.mock(ctrl)
+
+			hdl := NewArticleHandler(svc, logger.NewNopLogger())
+			server := gin.Default()
+			server.Use(func(ctx *gin.Context) {
+				ctx.Set("user_token", ijwt.UserClaims{
+					UserID: 123,
+				})
+			})
+
+			hdl.RegisterRoutes(server)
+
+			req, err := http.NewRequest(http.MethodPost, "/articles/list", bytes.NewReader([]byte(tc.reqBody)))
+			req.Header.Set("Content-Type", "application/json")
+			assert.NoError(t, err)
+
+			recorder := httptest.NewRecorder()
+
+			server.ServeHTTP(recorder, req)
+
+			var res Result
+			err = json.NewDecoder(recorder.Body).Decode(&res)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantCode, recorder.Code)
+			isResEqual(t, tc.wantRes.Data.([]ArticleVo), res.Data.([]any))
+		})
+	}
+}
+
+func isResEqual(t *testing.T, arts []ArticleVo, datas []any) {
+
+	for i, art := range arts {
+		assert.Equal(t, float64(art.Id), datas[i].(map[string]any)["id"])
+		if v, b := datas[i].(map[string]any)["author_id"]; b {
+			assert.Equal(t, float64(art.AuthorId), v)
+		}
+		assert.Equal(t, float64(art.Status), datas[i].(map[string]any)["status"])
+		assert.Equal(t, art.Ctime, datas[i].(map[string]any)["ctime"])
+		assert.Equal(t, art.Utime, datas[i].(map[string]any)["utime"])
+	}
+
 }

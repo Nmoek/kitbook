@@ -29,6 +29,13 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	group.POST("/publish", a.Publish)   // 发表帖子
 	group.POST("/withdraw", a.Withdraw) // 撤回帖子(更改可见状态)
 
+	// 创作者接口
+	group.GET("/detail/:id", a.Detail) // 帖子内容详情
+	// /list?offset=?&limit=?  带参查询
+	//group.GET("/list", a.List) // 创作列表
+	// 查询参数放在Body中
+	group.POST("/list", a.List)
+
 }
 
 // @func: Edit
@@ -261,6 +268,70 @@ ERR:
 		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Int[int64]("artId", req.Id)).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+	return
+}
+
+func (a *ArticleHandler) Detail(ctx *gin.Context) {
+
+}
+
+// @func: List
+// @date: 2023-12-04 00:10:52
+// @brief: 帖子模块-查询创作列表
+// @author: Kewin Li
+// @receiver a
+// @param context
+func (a *ArticleHandler) List(ctx *gin.Context) {
+	var reqPage Page
+	var err error
+	var arts []domain.Article
+	var claims ijwt.UserClaims
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_LIST]
+	fields := logger.Fields{}
+
+	err = ctx.Bind(&reqPage)
+	if err != nil {
+		fields = fields.Add(logger.String("请求解析失败"))
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+		goto ERR
+	}
+
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	arts, err = a.svc.GetByAuthor(ctx, claims.UserID, reqPage.Offset, reqPage.Limit)
+
+	switch err {
+	case nil:
+
+		a.l.INFO(logKey, fields.Add(logger.String("创作列表查询成功")).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Int[int64]("userID", claims.UserID))...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "查询成功",
+			Data: ConvertArticleVos(arts),
+		})
+
+		return
+	case service.ErrInvalidUpdate:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "非法操作",
+		})
+
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+	}
+
+ERR:
+	a.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 	return
 }

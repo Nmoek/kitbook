@@ -13,7 +13,6 @@ import (
 	dao "kitbook/internal/repository/dao"
 	reflect "reflect"
 
-	gin "github.com/gin-gonic/gin"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -38,6 +37,21 @@ func NewMockArticleDao(ctrl *gomock.Controller) *MockArticleDao {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockArticleDao) EXPECT() *MockArticleDaoMockRecorder {
 	return m.recorder
+}
+
+// GetByAuthor mocks base method.
+func (m *MockArticleDao) GetByAuthor(ctx context.Context, userId int64, offset, limit int) ([]dao.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByAuthor", ctx, userId, offset, limit)
+	ret0, _ := ret[0].([]dao.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByAuthor indicates an expected call of GetByAuthor.
+func (mr *MockArticleDaoMockRecorder) GetByAuthor(ctx, userId, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleDao)(nil).GetByAuthor), ctx, userId, offset, limit)
 }
 
 // Insert mocks base method.
@@ -71,7 +85,7 @@ func (mr *MockArticleDaoMockRecorder) Sync(ctx, art any) *gomock.Call {
 }
 
 // SyncStatus mocks base method.
-func (m *MockArticleDao) SyncStatus(ctx *gin.Context, artId, authorId int64, status uint8) error {
+func (m *MockArticleDao) SyncStatus(ctx context.Context, artId, authorId int64, status uint8) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyncStatus", ctx, artId, authorId, status)
 	ret0, _ := ret[0].(error)

@@ -5,7 +5,6 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 	"kitbook/pkg/logger"
@@ -16,7 +15,8 @@ var ErrInvalidUpdate = errors.New("非法操作")
 type ArticleService interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
-	Withdraw(ctx *gin.Context, art domain.Article) error
+	Withdraw(ctx context.Context, art domain.Article) error
+	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error)
 }
 
 // NormalArticleService
@@ -146,10 +146,25 @@ func (n *NormalArticleService) PublishV1(ctx context.Context, art domain.Article
 // @param art
 // @return int64
 // @return error
-func (n *NormalArticleService) Withdraw(ctx *gin.Context, art domain.Article) error {
+func (n *NormalArticleService) Withdraw(ctx context.Context, art domain.Article) error {
 	err := n.repo.SyncStatus(ctx, art.Id, art.Author.Id, domain.ArticleStatusPrivate)
 	if err == repository.ErrUserMismatch {
 		return ErrInvalidUpdate
 	}
 	return err
+}
+
+// @func: GetByAuthor
+// @date: 2023-12-04 00:22:51
+// @brief: 帖子服务-查询创作者创作列表
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param userId
+// @param offset
+// @param limit
+// @return []domain.Article
+// @return error
+func (n *NormalArticleService) GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error) {
+	return n.repo.GetByAuthor(ctx, userId, offset, limit)
 }

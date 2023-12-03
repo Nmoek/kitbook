@@ -13,7 +13,6 @@ import (
 	domain "kitbook/internal/domain"
 	reflect "reflect"
 
-	gin "github.com/gin-gonic/gin"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -55,6 +54,21 @@ func (mr *MockArticleRepositoryMockRecorder) Create(ctx, art any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockArticleRepository)(nil).Create), ctx, art)
 }
 
+// GetByAuthor mocks base method.
+func (m *MockArticleRepository) GetByAuthor(ctx context.Context, userId int64, offset, limit int) ([]domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByAuthor", ctx, userId, offset, limit)
+	ret0, _ := ret[0].([]domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByAuthor indicates an expected call of GetByAuthor.
+func (mr *MockArticleRepositoryMockRecorder) GetByAuthor(ctx, userId, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleRepository)(nil).GetByAuthor), ctx, userId, offset, limit)
+}
+
 // Sync mocks base method.
 func (m *MockArticleRepository) Sync(ctx context.Context, art domain.Article) (int64, error) {
 	m.ctrl.T.Helper()
@@ -71,7 +85,7 @@ func (mr *MockArticleRepositoryMockRecorder) Sync(ctx, art any) *gomock.Call {
 }
 
 // SyncStatus mocks base method.
-func (m *MockArticleRepository) SyncStatus(ctx *gin.Context, artId, authorId int64, status domain.ArticleStatus) error {
+func (m *MockArticleRepository) SyncStatus(ctx context.Context, artId, authorId int64, status domain.ArticleStatus) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyncStatus", ctx, artId, authorId, status)
 	ret0, _ := ret[0].(error)

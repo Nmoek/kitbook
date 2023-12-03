@@ -2,11 +2,11 @@ package repository
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository/dao"
 	"kitbook/pkg/logger"
+	"time"
 )
 
 var ErrUserMismatch = dao.ErrUserMismatch
@@ -15,7 +15,8 @@ type ArticleRepository interface {
 	Create(ctx context.Context, art domain.Article) (int64, error)
 	Update(ctx context.Context, art domain.Article) error
 	Sync(ctx context.Context, art domain.Article) (int64, error)
-	SyncStatus(ctx *gin.Context, artId int64, authorId int64, status domain.ArticleStatus) error
+	SyncStatus(ctx context.Context, artId int64, authorId int64, status domain.ArticleStatus) error
+	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error)
 }
 
 type CacheArticleRepository struct {
@@ -188,8 +189,30 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 // @param status
 // @return int64
 // @return error
-func (c *CacheArticleRepository) SyncStatus(ctx *gin.Context, artId int64, authorId int64, status domain.ArticleStatus) error {
+func (c *CacheArticleRepository) SyncStatus(ctx context.Context, artId int64, authorId int64, status domain.ArticleStatus) error {
 	return c.dao.SyncStatus(ctx, artId, authorId, status.ToUint8())
+}
+
+// @func: GetByAuthor
+// @date: 2023-12-04 00:25:08
+// @brief: 帖子服务-查询创作者创作列表
+// @author: Kewin Li
+// @receiver c
+// @param ctx
+// @param id
+// @param offset
+// @param limit
+// @return []domain.Article
+// @return error
+func (c *CacheArticleRepository) GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error) {
+
+	artsDao, err := c.dao.GetByAuthor(ctx, userId, offset, limit)
+	arts := make([]domain.Article, len(artsDao))
+	for i, art := range artsDao {
+		arts[i] = ConvertsDomainArticle(&art)
+	}
+
+	return arts, err
 }
 
 // @func: convertsDominUser
@@ -199,7 +222,17 @@ func (c *CacheArticleRepository) SyncStatus(ctx *gin.Context, artId int64, autho
 // @param user
 // @return domain.User
 func ConvertsDomainArticle(art *dao.Article) domain.Article {
-	return domain.Article{}
+	return domain.Article{
+		Id:      art.Id,
+		Title:   art.Title,
+		Content: art.Content,
+		Author: domain.Author{
+			Id: art.AuthorId,
+		},
+		Status: domain.ToArticleStatus(art.Status),
+		Ctime:  time.UnixMilli(art.Ctime),
+		Utime:  time.UnixMilli(art.Utime),
+	}
 }
 
 // @func: ConvertsDaoUser

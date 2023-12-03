@@ -13,7 +13,6 @@ import (
 	domain "kitbook/internal/domain"
 	reflect "reflect"
 
-	gin "github.com/gin-gonic/gin"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,9 +39,23 @@ func (m *MockArticleService) EXPECT() *MockArticleServiceMockRecorder {
 	return m.recorder
 }
 
+// GetByAuthor mocks base method.
+func (m *MockArticleService) GetByAuthor(ctx context.Context, userId int64, offset, limit int) ([]domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByAuthor", ctx, userId, offset, limit)
+	ret0, _ := ret[0].([]domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByAuthor indicates an expected call of GetByAuthor.
+func (mr *MockArticleServiceMockRecorder) GetByAuthor(ctx, userId, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleService)(nil).GetByAuthor), ctx, userId, offset, limit)
+}
+
 // Publish mocks base method.
 func (m *MockArticleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
-
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Publish", ctx, art)
 	ret0, _ := ret[0].(int64)
@@ -72,7 +85,7 @@ func (mr *MockArticleServiceMockRecorder) Save(ctx, art any) *gomock.Call {
 }
 
 // Withdraw mocks base method.
-func (m *MockArticleService) Withdraw(ctx *gin.Context, art domain.Article) error {
+func (m *MockArticleService) Withdraw(ctx context.Context, art domain.Article) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", ctx, art)
 	ret0, _ := ret[0].(error)

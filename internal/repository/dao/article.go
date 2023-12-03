@@ -5,7 +5,6 @@ package dao
 import (
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
@@ -17,7 +16,8 @@ type ArticleDao interface {
 	Insert(ctx context.Context, art Article) (int64, error)
 	UpdateById(ctx context.Context, art Article) error
 	Sync(ctx context.Context, art Article) (int64, error)
-	SyncStatus(ctx *gin.Context, artId int64, authorId int64, status uint8) error
+	SyncStatus(ctx context.Context, artId int64, authorId int64, status uint8) error
+	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]Article, error)
 }
 
 type GormArticleDao struct {
@@ -194,6 +194,7 @@ func (g *GormArticleDao) Sync(ctx context.Context, art Article) (int64, error) {
 			DoUpdates: clause.Assignments(map[string]interface{}{
 				"title":   publishArt.Title,
 				"content": publishArt.Content,
+				"status":  publishArt.Status,
 				"utime":   publishArt.Utime,
 			}),
 		}).Create(&publishArt).Error
@@ -215,7 +216,7 @@ func (g *GormArticleDao) Sync(ctx context.Context, art Article) (int64, error) {
 // @param status
 // @return int64
 // @return error
-func (g *GormArticleDao) SyncStatus(ctx *gin.Context, artId int64, authorId int64, status uint8) error {
+func (g *GormArticleDao) SyncStatus(ctx context.Context, artId int64, authorId int64, status uint8) error {
 	now := time.Now().UnixMilli()
 	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. 修改制作库
@@ -255,6 +256,29 @@ type Article struct {
 	Status   uint8  `bson:"status,omitempty"`
 	Ctime    int64  `bson:"ctime,omitempty"`
 	Utime    int64  `bson:"utime,omitempty"`
+}
+
+// @func: GetByAuthor
+// @date: 2023-12-04 00:26:47
+// @brief: 帖子服务-查询创作者创作列表
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param userId
+// @param offset
+// @param limit
+// @return []domain.Article
+// @return error
+func (g *GormArticleDao) GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]Article, error) {
+
+	var arts []Article
+	err := g.db.WithContext(ctx).Where("author_id = ?", userId).
+		Offset(offset).
+		Limit(limit).Order("utime DESC"). // 最新修改的排在前面
+		Find(&arts).Error
+
+	return arts, err
+
 }
 
 // 同步数据-同库不同表 使用衍生类型拓展一张一样的表结构
