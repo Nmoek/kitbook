@@ -10,6 +10,7 @@ import (
 type ArticleVo struct {
 	Id         int64  `json:"id,omitempty"`
 	Title      string `json:"title,omitempty"`
+	Abstract   string `json:"abstract,omitempty"`
 	Content    string `json:"content,omitempty"`
 	AuthorId   int64  `json:"authorId,omitempty"`
 	AuthorName string `json:"authorName,omitempty"`
@@ -20,9 +21,10 @@ type ArticleVo struct {
 
 func ConvertArticleVo(art *domain.Article) ArticleVo {
 	return ArticleVo{
-		Id:         art.Id,
-		Title:      art.Title,
-		Content:    art.Content,
+		Id:       art.Id,
+		Title:    art.Title,
+		Abstract: art.CreateAbstract(),
+		//Content:    art.Content, // 列表展示没有必要全部内容返回
 		AuthorId:   art.Author.Id,
 		AuthorName: "",
 		Status:     art.Status.ToUint8(),

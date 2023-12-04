@@ -4,6 +4,7 @@ import (
 	"context"
 	"gorm.io/gorm"
 	"kitbook/internal/domain"
+	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
 	"kitbook/pkg/logger"
 	"time"
@@ -21,7 +22,8 @@ type ArticleRepository interface {
 
 type CacheArticleRepository struct {
 	// V0写法 不分库
-	dao dao.ArticleDao
+	dao   dao.ArticleDao
+	cache cache.ArticleCache
 
 	// V2写法 在repository层做数据同步
 	authorDao dao.ArticleAuthorDao
@@ -30,9 +32,10 @@ type CacheArticleRepository struct {
 	l         logger.Logger
 }
 
-func NewCacheArticleRepository(dao dao.ArticleDao) ArticleRepository {
+func NewCacheArticleRepository(dao dao.ArticleDao, cache cache.ArticleCache) ArticleRepository {
 	return &CacheArticleRepository{
-		dao: dao,
+		dao:   dao,
+		cache: cache,
 	}
 }
 
@@ -80,7 +83,16 @@ func (c *CacheArticleRepository) Create(ctx context.Context, art domain.Article)
 // @param art
 // @return error
 func (c *CacheArticleRepository) Update(ctx context.Context, art domain.Article) error {
-	return c.dao.UpdateById(ctx, ConvertsDaoArticle(&art))
+	err := c.dao.UpdateById(ctx, ConvertsDaoArticle(&art))
+	if err == nil {
+		err = c.cache.DelFirstPage(ctx, art.Author.Id)
+		if err != nil {
+			//TODO: 日志埋点
+		}
+	}
+	//TODO: 日志埋点
+
+	return err
 }
 
 // @func: Sync(ctx context.Context, art domain.Article)
@@ -175,7 +187,15 @@ func (c *CacheArticleRepository) SyncV2(ctx context.Context, art domain.Article)
 // @return int64
 // @return error
 func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (int64, error) {
-	return c.dao.Sync(ctx, ConvertsDaoArticle(&art))
+	id, err := c.dao.Sync(ctx, ConvertsDaoArticle(&art))
+	if err == nil {
+		err = c.cache.DelFirstPage(ctx, art.Author.Id)
+		if err != nil {
+			//TODO: 日志埋点
+		}
+	}
+	//TODO: 日志埋点
+	return id, err
 }
 
 // @func: SyncStatus
@@ -190,7 +210,17 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 // @return int64
 // @return error
 func (c *CacheArticleRepository) SyncStatus(ctx context.Context, artId int64, authorId int64, status domain.ArticleStatus) error {
-	return c.dao.SyncStatus(ctx, artId, authorId, status.ToUint8())
+	err := c.dao.SyncStatus(ctx, artId, authorId, status.ToUint8())
+	if err == nil {
+		err = c.cache.DelFirstPage(ctx, authorId)
+		if err != nil {
+			//TODO: 日志埋点
+		}
+	}
+
+	// TODO: 日志埋点
+
+	return err
 }
 
 // @func: GetByAuthor
@@ -205,11 +235,34 @@ func (c *CacheArticleRepository) SyncStatus(ctx context.Context, artId int64, au
 // @return []domain.Article
 // @return error
 func (c *CacheArticleRepository) GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error) {
+	// 1. 判定是否应该查询缓存
+
+	// TODO: 优化 只要数据量小于等于1 page都可以进行查询
+	if offset == 0 && limit == 100 {
+		arts, err := c.cache.GetFirstPage(ctx, userId)
+		if err == nil {
+			return arts, err
+		} else {
+			// TODO: 日志埋点, 缓存命中、缓存未命中等情况都需要考虑
+		}
+	}
 
 	artsDao, err := c.dao.GetByAuthor(ctx, userId, offset, limit)
 	arts := make([]domain.Article, len(artsDao))
 	for i, art := range artsDao {
 		arts[i] = ConvertsDomainArticle(&art)
+	}
+
+	// 查完数据库需要把缓存放回去
+	// TODO:优化  1.异步缓存 2.达到查询阈值才缓存
+	if offset == 0 && limit == 100 {
+		err = c.cache.SetFirstPage(ctx, userId, arts)
+		if err != nil {
+			//TODO: 日志埋点
+			// 1. 偶尔网络波动缓存失败
+			// 2. redis崩溃、网络服务长时间不恢复
+			// 3. 操作redis出错
+		}
 	}
 
 	return arts, err

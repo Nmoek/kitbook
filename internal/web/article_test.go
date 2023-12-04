@@ -261,6 +261,46 @@ func TestArticleHandler_List(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "非创作者查询列表, 查询失败",
+
+			mock: func(ctrl *gomock.Controller) service.ArticleService {
+				svc := svcmocks.NewMockArticleService(ctrl)
+
+				svc.EXPECT().GetByAuthor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, service.ErrInvalidUpdate)
+				return svc
+			},
+
+			reqBody: `{
+"limit": 3,
+"offset": 2
+}`,
+			wantCode: http.StatusOK,
+			wantRes: Result{
+				Msg: "非法操作",
+			},
+		},
+		{
+			name: "系统错误, 查询失败",
+
+			mock: func(ctrl *gomock.Controller) service.ArticleService {
+				svc := svcmocks.NewMockArticleService(ctrl)
+
+				svc.EXPECT().GetByAuthor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("其他错误"))
+				return svc
+			},
+
+			reqBody: `{
+"limit": 3,
+"offset": 5
+}`,
+			wantCode: http.StatusOK,
+			wantRes: Result{
+				Msg: "系统错误",
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -292,7 +332,10 @@ func TestArticleHandler_List(t *testing.T) {
 			err = json.NewDecoder(recorder.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantCode, recorder.Code)
-			isResEqual(t, tc.wantRes.Data.([]ArticleVo), res.Data.([]any))
+			if tc.wantRes.Data != nil && res.Data != nil {
+				isResEqual(t, tc.wantRes.Data.([]ArticleVo), res.Data.([]any))
+
+			}
 		})
 	}
 }
