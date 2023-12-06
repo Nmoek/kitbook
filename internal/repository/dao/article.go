@@ -18,6 +18,8 @@ type ArticleDao interface {
 	Sync(ctx context.Context, art Article) (int64, error)
 	SyncStatus(ctx context.Context, artId int64, authorId int64, status uint8) error
 	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]Article, error)
+	GetById(ctx context.Context, artId int64) (Article, error)
+	GetPubById(ctx context.Context, artId int64) (PublishedArticle, error)
 }
 
 type GormArticleDao struct {
@@ -248,19 +250,9 @@ func (g *GormArticleDao) SyncStatus(ctx context.Context, artId int64, authorId i
 
 }
 
-type Article struct {
-	Id       int64  `gorm:"primaryKey, autoIncrement" bson:"id,omitempty"`
-	Title    string `gorm:"type=varchar(256)" bson:"title,omitempty"`
-	Content  string `gorm:"type=BLOB" bson:"content,omitempty"`
-	AuthorId int64  `gorm:"index" bson:"author_id,omitempty"`
-	Status   uint8  `bson:"status,omitempty"`
-	Ctime    int64  `bson:"ctime,omitempty"`
-	Utime    int64  `bson:"utime,omitempty"`
-}
-
 // @func: GetByAuthor
 // @date: 2023-12-04 00:26:47
-// @brief: 帖子服务-查询创作者创作列表
+// @brief: 帖子查询-查询创作者创作列表
 // @author: Kewin Li
 // @receiver g
 // @param ctx
@@ -279,6 +271,48 @@ func (g *GormArticleDao) GetByAuthor(ctx context.Context, userId int64, offset i
 
 	return arts, err
 
+}
+
+// @func: GetById(ctx context.Context, artId int64)
+// @date: 2023-12-05 02:37:29
+// @brief:  帖子查询-查询创作列表内容详情
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param artId
+// @return []Article
+// @return error
+func (g *GormArticleDao) GetById(ctx context.Context, artId int64) (Article, error) {
+	var art Article
+	err := g.db.WithContext(ctx).Where("id = ?", artId).First(&art).Error
+	return art, err
+}
+
+// @func: GetPubById(ctx context.Context, artId int64)
+// @date: 2023-12-06 22:40:31
+// @brief: 查询接口-读者查询帖子
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param artId
+// @return Article
+// @return error
+func (g *GormArticleDao) GetPubById(ctx context.Context, artId int64) (PublishedArticle, error) {
+	var art PublishedArticle
+	// 查询线上库
+	err := g.db.WithContext(ctx).Where("id = ?", artId).First(&art).Error
+
+	return art, err
+}
+
+type Article struct {
+	Id       int64  `gorm:"primaryKey, autoIncrement" bson:"id,omitempty"`
+	Title    string `gorm:"type=varchar(256)" bson:"title,omitempty"`
+	Content  string `gorm:"type=BLOB" bson:"content,omitempty"`
+	AuthorId int64  `gorm:"index" bson:"author_id,omitempty"`
+	Status   uint8  `bson:"status,omitempty"`
+	Ctime    int64  `bson:"ctime,omitempty"`
+	Utime    int64  `bson:"utime,omitempty"`
 }
 
 // 同步数据-同库不同表 使用衍生类型拓展一张一样的表结构

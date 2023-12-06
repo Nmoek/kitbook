@@ -9,6 +9,8 @@ import (
 	ijwt "kitbook/internal/web/jwt"
 	"kitbook/pkg/logger"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type ArticleHandler struct {
@@ -36,6 +38,9 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// 查询参数放在Body中
 	group.POST("/list", a.List)
 
+	// 读者接口
+	pub := group.Group("/pub")
+	pub.GET("/:id", a.PubDetail)
 }
 
 // @func: Edit
@@ -272,7 +277,80 @@ ERR:
 	return
 }
 
+// @func: Detail
+// @date: 2023-12-05 02:09:13
+// @brief: 查询创作列表-内容详情
+// @author: Kewin Li
+// @receiver a
+// @param ctx
 func (a *ArticleHandler) Detail(ctx *gin.Context) {
+
+	var id int64
+	var err error
+	var claims ijwt.UserClaims
+	var art domain.Article
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_DETAIL]
+	fields := logger.Fields{}
+
+	idStr := ctx.Param("id")
+	id, err = strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		a.l.WARN(logKey, fields.Add(logger.String("请求参数解析错误")).
+			Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"idStr", idStr})...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+		return
+	}
+
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	art, err = a.svc.GetById(ctx, id)
+
+	// 防攻击
+	if art.Author.Id != claims.UserID {
+
+		fields = fields.Add(logger.String("用户与帖子ID不匹配"))
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+		goto ERR
+	}
+
+	switch err {
+	case nil:
+
+		a.l.INFO(logKey, fields.Add(logger.String("查询列表详情成功")).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", id}).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg:  "查询详情成功",
+			Data: ConvertArticleVo(&art, false),
+		})
+
+		return
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+	}
+
+ERR:
+	a.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", id}).
+			Add(logger.Int[int64]("userId", claims.UserID)).
+			Add(logger.Field{"authorId", art.Author.Id})...)
+	return
 
 }
 
@@ -311,15 +389,11 @@ func (a *ArticleHandler) List(ctx *gin.Context) {
 			Add(logger.Int[int64]("userID", claims.UserID))...)
 
 		ctx.JSON(http.StatusOK, Result{
-			Msg:  "查询成功",
-			Data: ConvertArticleVos(arts),
+			Msg:  "查询列表成功",
+			Data: ConvertArticleVos(arts, true),
 		})
 
 		return
-	case service.ErrInvalidUpdate:
-		ctx.JSON(http.StatusOK, Result{
-			Msg: "非法操作",
-		})
 
 	default:
 		ctx.JSON(http.StatusOK, Result{
@@ -332,6 +406,70 @@ ERR:
 	a.l.ERROR(logKey,
 		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+	return
+}
+
+// @func: PubDetail
+// @date: 2023-12-06 02:22:27
+// @brief: 帖子模块-读者查询
+// @author: Kewin Li
+// @receiver a
+// @param context
+func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_PUBDETAIL]
+	fields := logger.Fields{}
+	var claims ijwt.UserClaims
+	var artId int64
+	var err error
+	var art domain.Article
+
+	idStr := ctx.Param("id")
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	artId, err = strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		fields = fields.Add(logger.String("请求参数解析失败"))
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+
+		goto ERR
+	}
+
+	art, err = a.svc.GetPubById(ctx, artId)
+
+	switch err {
+	case nil:
+		a.l.INFO(logKey,
+			fields.Add(logger.String("读者查询成功")).
+				Add(logger.Field{"IP", ctx.ClientIP()}).
+				Add(logger.Int[int64]("artId", artId))...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "查询成功",
+			Data: ArticleVo{
+				Id:         art.Id,
+				Title:      art.Title,
+				Content:    art.Content, // 列表展示没有必要全部内容返回
+				AuthorId:   art.Author.Id,
+				AuthorName: art.Author.Name, //TODO: 如何拿到？
+				Status:     art.Status.ToUint8(),
+				Ctime:      art.Ctime.Format(time.DateTime),
+				Utime:      art.Utime.Format(time.DateTime),
+			}})
+		return
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+	}
+
+ERR:
+	a.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", artId}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 	return
 }

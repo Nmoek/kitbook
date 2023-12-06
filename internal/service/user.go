@@ -116,7 +116,7 @@ func (svc *NormalUserService) Edit(ctx context.Context, user domain.User) error 
 // @return interface{}
 func (svc *NormalUserService) Profile(ctx context.Context, id int64) (domain.User, error) {
 
-	return svc.repo.FindByID(ctx, id)
+	return svc.repo.FindById(ctx, id)
 
 }
 

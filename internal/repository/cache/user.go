@@ -78,7 +78,7 @@ func (c *RedisUserCache) Set(ctx context.Context, user dao.User) error {
 	return c.cmd.Set(ctx, k, string(val), c.expiration).Err()
 }
 
-// @func: createKey
+// @func: createFirstPageKey
 // @date: 2023-10-26 02:15:07
 // @brief: 缓存模块-设计Key
 // @author: Kewin Li

@@ -144,7 +144,7 @@ func TestCacheUserRepository_FindByID(t *testing.T) {
 
 			d, c := tc.mock(ctrl)
 			repo := NewCacheUserRepository(d, c)
-			user, err := repo.FindByID(tc.ctx, tc.id)
+			user, err := repo.FindById(tc.ctx, tc.id)
 			//
 			assert.Equal(t, tc.wantErr, err)
 			assert.Equal(t, tc.wantUser, user)

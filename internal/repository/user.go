@@ -19,7 +19,7 @@ type UserRepository interface {
 	Create(ctx context.Context, u domain.User) error
 	UpdatePersonalInfo(ctx context.Context, user domain.User) error
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
-	FindByID(ctx context.Context, id int64) (domain.User, error)
+	FindById(ctx context.Context, id int64) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	FindByWechat(ctx context.Context, openid string) (domain.User, error)
 }
@@ -90,7 +90,7 @@ func (repo *CacheUserRepository) FindByEmail(ctx context.Context, email string) 
 	return ConvertsDomainUser(&findUser), nil
 }
 
-// @func: FindByID
+// @func: FindById
 // @date: 2023-10-12 04:05:17
 // @brief: 转发模块-数据查询
 // @author: Kewin Li
@@ -98,7 +98,7 @@ func (repo *CacheUserRepository) FindByEmail(ctx context.Context, email string) 
 // @param ctx
 // @param id
 // @return error
-func (repo *CacheUserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
+func (repo *CacheUserRepository) FindById(ctx context.Context, id int64) (domain.User, error) {
 	// 查询缓存
 	cacheUser, err := repo.c.Get(ctx, id)
 

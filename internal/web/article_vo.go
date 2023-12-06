@@ -19,24 +19,33 @@ type ArticleVo struct {
 	Utime      string `json:"utime,omitempty"`
 }
 
-func ConvertArticleVo(art *domain.Article) ArticleVo {
-	return ArticleVo{
-		Id:       art.Id,
-		Title:    art.Title,
-		Abstract: art.CreateAbstract(),
-		//Content:    art.Content, // 列表展示没有必要全部内容返回
+func ConvertArticleVo(art *domain.Article, isAbstract bool) ArticleVo {
+
+	var txt string
+	if isAbstract {
+		txt = art.CreateAbstract()
+	} else {
+		txt = art.Content
+	}
+
+	vo := ArticleVo{
+		Id:         art.Id,
+		Title:      art.Title,
+		Abstract:   txt,
+		Content:    txt, // 列表展示没有必要全部内容返回
 		AuthorId:   art.Author.Id,
 		AuthorName: "",
 		Status:     art.Status.ToUint8(),
 		Ctime:      art.Ctime.Format(time.DateTime),
 		Utime:      art.Utime.Format(time.DateTime),
 	}
+	return vo
 }
 
-func ConvertArticleVos(arts []domain.Article) []ArticleVo {
+func ConvertArticleVos(arts []domain.Article, isAbstract bool) []ArticleVo {
 	artsVo := make([]ArticleVo, len(arts))
 	for i, art := range arts {
-		artsVo[i] = ConvertArticleVo(&art)
+		artsVo[i] = ConvertArticleVo(&art, isAbstract)
 	}
 
 	return artsVo

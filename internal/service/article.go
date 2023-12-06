@@ -17,6 +17,8 @@ type ArticleService interface {
 	Publish(ctx context.Context, art domain.Article) (int64, error)
 	Withdraw(ctx context.Context, art domain.Article) error
 	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error)
+	GetById(ctx context.Context, artId int64) (domain.Article, error)
+	GetPubById(ctx context.Context, artId int64) (domain.Article, error)
 }
 
 // NormalArticleService
@@ -167,4 +169,31 @@ func (n *NormalArticleService) Withdraw(ctx context.Context, art domain.Article)
 // @return error
 func (n *NormalArticleService) GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error) {
 	return n.repo.GetByAuthor(ctx, userId, offset, limit)
+}
+
+// @func: GetById(ctx context.Context, artId int64)
+// @date: 2023-12-05 02:17:12
+// @brief: 帖子服务-查询创作列表详情内容
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param artId
+// @return []domain.Article
+// @return error
+func (n *NormalArticleService) GetById(ctx context.Context, artId int64) (domain.Article, error) {
+	return n.repo.GetById(ctx, artId)
+}
+
+// @func: PubDetail
+// @date: 2023-12-06 02:50:47
+// @brief: 帖子查询-读者接口
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param artId
+// @param userId
+// @return []domain.Article
+// @return error
+func (n *NormalArticleService) GetPubById(ctx context.Context, artId int64) (domain.Article, error) {
+	return n.repo.GetPubById(ctx, artId)
 }
