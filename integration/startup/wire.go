@@ -20,16 +20,32 @@ var thirdPartySet = wire.NewSet(
 	InitLogger,
 )
 
+var interactiveSvcSet = wire.NewSet(
+	dao.NewGORMInteractiveDao,
+	cache.NewRedisInteractiveCache,
+	repository.NewArticleInteractiveRepository,
+	service.NewArticleInteractiveService,
+)
+
+var userSvcProvider = wire.NewSet(
+	dao.NewGormUserDao,
+	cache.NewRedisUserCache,
+	repository.NewCacheUserRepository,
+	service.NewNormalUserService,
+)
+
 func InitWebServer() *gin.Engine {
 
 	wire.Build(
 		// 第三方依赖
 		thirdPartySet,
+		interactiveSvcSet,
 
 		dao.NewGormUserDao,
 		dao.NewGormArticleDao,
 		cache.NewRedisUserCache,
 		cache.NewRedisCodeCache,
+		cache.NewRedisArticleCache,
 		//cache.NewLocalCodeCache,
 
 		repository.NewCacheUserRepository,
@@ -58,10 +74,22 @@ func InitWebServer() *gin.Engine {
 func NewArticleHandler(dao dao.ArticleDao) *web.ArticleHandler {
 	wire.Build(
 		thirdPartySet,
+		userSvcProvider,
+		interactiveSvcSet,
+
+		cache.NewRedisArticleCache,
 		repository.NewCacheArticleRepository,
 		service.NewNormalArticleService,
 		web.NewArticleHandler,
 	)
 
 	return &web.ArticleHandler{}
+}
+
+func NewInteractiveService() service.InteractiveService {
+	wire.Build(
+		thirdPartySet,
+		interactiveSvcSet,
+	)
+	return service.NewArticleInteractiveService(nil)
 }

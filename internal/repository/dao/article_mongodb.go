@@ -3,7 +3,6 @@ package dao
 import (
 	"context"
 	"github.com/bwmarrin/snowflake"
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,7 +15,9 @@ type MongoDBArticleDAO struct {
 	liveCol    *mongo.Collection
 }
 
-func NewMongoDBArticleDAO(mdb *mongo.Database, node *snowflake.Node) *MongoDBArticleDAO {
+//var _ ArticleDAO = &MongoDBArticleDAO{}
+
+func NewMongoDBArticleDAO(mdb *mongo.Database, node *snowflake.Node) ArticleDao {
 	return &MongoDBArticleDAO{
 		node:       node,
 		produceCol: mdb.Collection("articles"),
@@ -107,7 +108,7 @@ func (m *MongoDBArticleDAO) Sync(ctx context.Context, art Article) (int64, error
 	return art.Id, err
 }
 
-func (m *MongoDBArticleDAO) SyncStatus(ctx *gin.Context, artId int64, authorId int64, status uint8) error {
+func (m *MongoDBArticleDAO) SyncStatus(ctx context.Context, artId int64, authorId int64, status uint8) error {
 
 	now := time.Now().UnixMilli()
 	filter := bson.M{
@@ -135,4 +136,19 @@ func (m *MongoDBArticleDAO) SyncStatus(ctx *gin.Context, artId int64, authorId i
 
 	// 线上库遵循啊UPSERT语义
 	return err
+}
+
+func (m *MongoDBArticleDAO) GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]Article, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *MongoDBArticleDAO) GetById(ctx context.Context, artId int64) (Article, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *MongoDBArticleDAO) GetPubById(ctx context.Context, artId int64) (PublishedArticle, error) {
+	//TODO implement me
+	panic("implement me")
 }

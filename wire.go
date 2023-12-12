@@ -14,6 +14,13 @@ import (
 	"kitbook/ioc"
 )
 
+var interactiveSvcSet = wire.NewSet(
+	dao.NewGORMInteractiveDao,
+	cache.NewRedisInteractiveCache,
+	repository.NewArticleInteractiveRepository,
+	service.NewArticleInteractiveService,
+)
+
 func InitWebServer() *gin.Engine {
 
 	wire.Build(
@@ -21,6 +28,8 @@ func InitWebServer() *gin.Engine {
 		ioc.InitDB,
 		ioc.InitRedis,
 		//ioc.InitFreeCache,
+
+		interactiveSvcSet,
 
 		dao.NewGormUserDao,
 		dao.NewGormArticleDao,

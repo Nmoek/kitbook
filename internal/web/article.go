@@ -3,6 +3,7 @@
 package web
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
@@ -14,14 +15,20 @@ import (
 )
 
 type ArticleHandler struct {
-	svc service.ArticleService
-	l   logger.Logger
+	svc            service.ArticleService
+	interactiveSvc service.InteractiveService
+	l              logger.Logger
+	biz            string
 }
 
-func NewArticleHandler(svc service.ArticleService, l logger.Logger) *ArticleHandler {
+func NewArticleHandler(svc service.ArticleService,
+	interactiveSvc service.InteractiveService,
+	l logger.Logger) *ArticleHandler {
 	return &ArticleHandler{
-		svc: svc,
-		l:   l,
+		svc:            svc,
+		interactiveSvc: interactiveSvc,
+		l:              l,
+		biz:            "article", // 业务标识
 	}
 }
 
@@ -451,17 +458,35 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 			Data: ArticleVo{
 				Id:         art.Id,
 				Title:      art.Title,
-				Content:    art.Content, // 列表展示没有必要全部内容返回
+				Content:    art.Content,
 				AuthorId:   art.Author.Id,
-				AuthorName: art.Author.Name, //TODO: 如何拿到？
+				AuthorName: art.Author.Name,
 				Status:     art.Status.ToUint8(),
 				Ctime:      art.Ctime.Format(time.DateTime),
 				Utime:      art.Utime.Format(time.DateTime),
 			}})
+
+		go func() {
+			newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+
+			// 阅读数+1
+			err2 := a.interactiveSvc.IncreaseReadCnt(newCtx, a.biz, artId)
+			if err2 != nil {
+				a.l.ERROR(logKey,
+					fields.Add(logger.Error(err2)).
+						Add(logger.String("阅读数更新失败")).
+						Add(logger.Field{"IP", ctx.ClientIP()}).
+						Add(logger.Field{"artId", artId}).
+						Add(logger.Int[int64]("userId", claims.UserID))...)
+			}
+
+		}()
+
 		return
 	default:
 		ctx.JSON(http.StatusOK, Result{
-			Msg: "系统错误",
+			Msg: "获取文章失败",
 		})
 	}
 

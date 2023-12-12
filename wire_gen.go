@@ -8,6 +8,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
@@ -41,7 +42,15 @@ func InitWebServer() *gin.Engine {
 	articleCache := cache.NewRedisArticleCache(cmdable)
 	articleRepository := repository.NewCacheArticleRepository(articleDao, articleCache, userRepository)
 	articleService := service.NewNormalArticleService(articleRepository, logger)
-	articleHandler := web.NewArticleHandler(articleService, logger)
+	interactiveDao := dao.NewGORMInteractiveDao(db)
+	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
+	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache)
+	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
+	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
 	engine := ioc.InitWebService(v, userHandler, oAuth2WechatHandler, articleHandler)
 	return engine
 }
+
+// wire.go:
+
+var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDao, cache.NewRedisInteractiveCache, repository.NewArticleInteractiveRepository, service.NewArticleInteractiveService)
