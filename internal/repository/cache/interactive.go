@@ -15,14 +15,17 @@ var (
 )
 
 const (
-	fieldReadCnt = "read_cnt"
-	fieldLikeCnt = "like_cnt"
+	fieldReadCnt    = "read_cnt"
+	fieldLikeCnt    = "like_cnt"
+	fieldCollectCnt = "collect_cnt"
 )
 
 type InteractiveCache interface {
 	IncreaseReadCntIfPresent(ctx context.Context, biz string, bizId int64) error
 	IncreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error
 	DecreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error
+	IncrCollectionCntIfPresent(ctx context.Context, biz string, bizId int64) error
+	DecrCollectionCntIfPresent(ctx context.Context, biz string, bizId int64) error
 }
 
 type RedisInteractiveCache struct {
@@ -87,5 +90,34 @@ func (r *RedisInteractiveCache) IncreaseLikeCntIfPresent(ctx context.Context, bi
 // @return error
 func (r *RedisInteractiveCache) DecreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error {
 	return r.client.Eval(ctx, luaDecrCnt, []string{r.createKey(biz, bizId)}, fieldLikeCnt, 1).Err()
+
+}
+
+// @func: IncrCollectionCntIfPresent
+// @date: 2023-12-14 02:04:49
+// @brief: 收藏数+1
+// @author: Kewin Li
+// @receiver r
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return error
+func (r *RedisInteractiveCache) IncrCollectionCntIfPresent(ctx context.Context, biz string, bizId int64) error {
+	return r.client.Eval(ctx, luaIncrCnt, []string{r.createKey(biz, bizId)}, fieldCollectCnt, 1).Err()
+}
+
+// @func: DecrCollectionCntIfPresent
+// @date: 2023-12-14 02:04:57
+// @brief: 收藏数-1
+// @author: Kewin Li
+// @receiver r
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return error
+func (r *RedisInteractiveCache) DecrCollectionCntIfPresent(ctx context.Context, biz string, bizId int64) error {
+	return r.client.Eval(ctx, luaDecrCnt, []string{r.createKey(biz, bizId)}, fieldCollectCnt, 1).Err()
 
 }

@@ -9,6 +9,8 @@ type InteractiveService interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error
 	Like(ctx context.Context, biz string, bizId int64, userId int64) error
 	CancelLike(ctx context.Context, biz string, bizId int64, userId int64) error
+	Collect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
+	CancelCollect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
 }
 
 type ArticleInteractiveService struct {
@@ -58,4 +60,25 @@ func (a *ArticleInteractiveService) Like(ctx context.Context, biz string, bizId 
 // @return error
 func (a *ArticleInteractiveService) CancelLike(ctx context.Context, biz string, bizId int64, userId int64) error {
 	return a.repo.DecreaseLikeCnt(ctx, biz, bizId, userId)
+}
+
+// @func:
+// @date: 2023-12-14 01:45:00
+// @brief: 收藏帖子
+// @author: Kewin Li
+// @receiver a
+// @return unc
+func (a *ArticleInteractiveService) Collect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error {
+
+	return a.repo.IncreaseCollectItem(ctx, biz, bizId, collectId, userId)
+}
+
+// @func:
+// @date: 2023-12-14 01:45:00
+// @brief: 取消收藏帖子
+// @author: Kewin Li
+// @receiver a
+// @return unc
+func (a *ArticleInteractiveService) CancelCollect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error {
+	return a.repo.DecreaseCollectItem(ctx, biz, bizId, collectId, userId)
 }

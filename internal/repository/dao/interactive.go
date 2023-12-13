@@ -11,6 +11,8 @@ type InteractiveDao interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error
 	AddLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) error
 	DelLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) error
+	AddCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
+	DelCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
 }
 
 type GORMInteractiveDao struct {
@@ -118,7 +120,7 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 		err := tx.Model(&UserLikeInfo{}).
 			Where("user_id = ? AND biz_id = ? AND biz = ?").
 			Updates(map[string]any{
-				"status": 0,
+				"status": 0, //当前点赞无效
 				"utime":  now,
 			}).Error
 
@@ -136,14 +138,104 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 	})
 }
 
+// @func: AddCollectionItem
+// @date: 2023-12-14 02:03:10
+// @brief: 增加收藏内容
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param biz
+// @param bizId
+// @param collectId
+// @param userId
+// @return error
+func (g *GORMInteractiveDao) AddCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error {
+	now := time.Now().UnixMilli()
+
+	// 1. 收藏信息表
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Clauses(clause.OnConflict{
+			DoUpdates: clause.Assignments(map[string]any{
+				"status":     1,
+				"collect_id": collectId,
+				"utime":      now,
+			}),
+		}).Create(&UserCollectInfo{
+			UserId:    userId,
+			BizId:     bizId,
+			Biz:       biz,
+			Status:    1,
+			CollectId: collectId,
+			Utime:     now,
+			Ctime:     now,
+		}).Error
+
+		if err != nil {
+			//TODO: 日志埋点
+			return err
+		}
+
+		// 2. 互动表
+		return tx.Clauses(clause.OnConflict{
+			DoUpdates: clause.Assignments(map[string]any{
+				"collect_cnt": gorm.Expr("`collect_cnt` + 1"),
+				"utime":       now,
+			}),
+		}).Create(&Interactive{
+			BizId:      bizId,
+			Biz:        biz,
+			CollectCnt: 1,
+			Utime:      now,
+			Ctime:      now,
+		}).Error
+	})
+}
+
+// @func: DelCollectionItem
+// @date: 2023-12-14 02:03:20
+// @brief: 去除收藏内容
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param biz
+// @param bizId
+// @param collectId
+// @param userId
+// @return error
+func (g *GORMInteractiveDao) DelCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error {
+	now := time.Now().UnixMilli()
+
+	// 1. 软删除 收藏信息
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&UserCollectInfo{}).
+			Where("user_id = ? AND biz_id = ? AND biz = ?", userId, bizId, biz).
+			Updates(map[string]any{
+				"status": 0,
+				"utime":  now,
+			}).Error
+
+		if err != nil {
+			return err
+		}
+		// 2. 互动表 收藏数-1
+		return tx.Model(&Interactive{}).
+			Where("user_id = ? AND biz_id = ? AND biz = ?", userId, bizId, biz).
+			Updates(map[string]any{
+				"collect_cnt": gorm.Expr("`collect_cnt` - 1"),
+				"utime":       now,
+			}).Error
+	})
+
+}
+
 // Interactive
 // @Description: 阅读数、点赞数、收藏数三合一
 type Interactive struct {
 	Id int64 `gorm:"primaryKey, autoIncrement"`
 
-	// TODO: 建立联合唯一索引<bizId, biz>
+	// 建立联合唯一索引<bizId, biz>
 	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
-	Biz   string `gorm:"type=varchar(128), uniqueIndex:biz_type_id"`
+	Biz   string `gorm:"type=varchar(128);uniqueIndex:uid_biz_type_id"`
 
 	// 阅读数
 	ReadCnt int64
@@ -156,15 +248,36 @@ type Interactive struct {
 }
 
 // UserLikeInfo
-// @Description: 用户被点赞的信息表
+// @Description: 用户已点赞的信息表, 记录当前用户给什么点了赞
 type UserLikeInfo struct {
 	Id int64 `gorm:"primaryKey, autoIncrement"`
 	// 以用户ID为主字段查询
-	UserId int64  `gorm:"uniqueIndex:uid_biz_type_id"`
-	BizId  int64  `gorm:"uniqueIndex:uid_biz_type_id"`
-	Biz    string `gorm:"uniqueIndex:uid_biz_type_id"`
+	UserId int64 `gorm:"uniqueIndex:uid_biz_type_id"`
+	// BizId + Biz 共同表示哪个业务的哪一条记录
+	BizId int64  `gorm:"uniqueIndex:uid_biz_type_id"`
+	Biz   string `gorm:"type=varchar(128);uniqueIndex:uid_biz_type_id"`
 
 	// 点赞是否有效
+	Status int8
+	Utime  int64
+	Ctime  int64
+}
+
+// UserCollectInfo
+// @Description: 用户已收藏的信息表, 记录当前哪个帖子被收藏在哪个收藏夹中
+
+type UserCollectInfo struct {
+	Id int64 `gorm:"primaryKey, autoIncrement"`
+	// 以用户ID为主字段查询
+	UserId int64 `gorm:"uniqueIndex:uid_biz_type_id"`
+	// BizId + Biz 共同表示哪个业务的哪一条记录
+	BizId int64  `gorm:"uniqueIndex:uid_biz_type_id"`
+	Biz   string `gorm:"type=varchar(128);uniqueIndex:uid_biz_type_id"`
+
+	// 被收藏在哪一个收藏夹
+	// 注意: 一个资源只能被收藏一次, 否则就会出现多个收藏夹中同一个资源
+	CollectId int64 `gorm:"index"`
+	// 收藏是否还有效
 	Status int8
 	Utime  int64
 	Ctime  int64

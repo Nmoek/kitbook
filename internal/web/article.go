@@ -55,6 +55,9 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// 传入参数, true=点赞, false=取消点赞
 	pub.POST("/like", a.Like) // 内嵌阅读数接口
 
+	// 收藏接口
+	pub.POST("/collect", a.Collect)
+
 }
 
 // @func: Edit
@@ -561,6 +564,62 @@ ERR:
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", req.Id}).
 			Add(logger.Field{"isLike", req.IsLike}).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+	return
+}
+
+// @func: Collect
+// @date: 2023-12-14 01:37:55
+// @brief: 帖子收藏
+// @author: Kewin Li
+// @receiver a
+// @param c
+func (a *ArticleHandler) Collect(ctx *gin.Context) {
+	type CollectReq struct {
+		// 帖子ID
+		Id int64 `json:"id"`
+		// 收藏夹ID
+		CollectId int64 `json:"collectId"`
+	}
+
+	var req CollectReq
+	var err error
+	var claims ijwt.UserClaims
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_COLLECT]
+	fields := logger.Fields{}
+
+	err = ctx.Bind(&req)
+	if err != nil {
+		fields = fields.Add(logger.String("请求参数解析错误"))
+		goto ERR
+	}
+
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	err = a.interactiveSvc.Collect(ctx, a.biz, req.Id, req.CollectId, claims.UserID)
+
+	switch err {
+	case nil:
+		a.l.INFO(logKey, fields.Add(logger.String("收藏成功")).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "收藏成功",
+		})
+		return
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "收藏失败",
+		})
+	}
+
+ERR:
+	a.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", req.Id}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 	return
 }
