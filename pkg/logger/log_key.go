@@ -26,6 +26,7 @@ const (
 	LOG_ART_DETAIL
 	LOG_ART_LIST
 	LOG_ART_PUBDETAIL
+	LOG_ART_LIKE
 )
 
 // 用户模块报错key
@@ -53,4 +54,5 @@ var ArticleLogMsgKey = map[int]string{
 	LOG_ART_DETAIL:    "art_detail_log",
 	LOG_ART_LIST:      "art_list_log",
 	LOG_ART_PUBDETAIL: "art_pub_detail_log",
+	LOG_ART_LIKE:      "art_like_log",
 }

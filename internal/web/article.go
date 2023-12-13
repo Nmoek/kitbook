@@ -45,9 +45,16 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// 查询参数放在Body中
 	group.POST("/list", a.List)
 
-	// 读者接口
+	// 分第二个层次
 	pub := group.Group("/pub")
-	pub.GET("/:id", a.PubDetail)
+
+	// 读者接口
+	pub.GET("/:id", a.PubDetail) // 内嵌阅读数接口
+
+	// 点赞接口
+	// 传入参数, true=点赞, false=取消点赞
+	pub.POST("/like", a.Like) // 内嵌阅读数接口
+
 }
 
 // @func: Edit
@@ -495,6 +502,65 @@ ERR:
 		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", artId}).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+	return
+}
+
+// @func: Like
+// @date: 2023-12-13 21:46:31
+// @brief: 点赞/取消点赞
+// @author: Kewin Li
+// @receiver a
+// @param c
+func (a *ArticleHandler) Like(ctx *gin.Context) {
+	type LikeReq struct {
+		Id     int64 `json:"id"`
+		IsLike bool  `json:"isLike"`
+	}
+	var req LikeReq
+	var err error
+	var claims ijwt.UserClaims
+
+	logKey := logger.ArticleLogMsgKey[logger.LOG_ART_LIKE]
+	fields := logger.Fields{}
+
+	err = ctx.Bind(&req)
+	if err != nil {
+		fields = fields.Add(logger.String("请求参数解析错误"))
+		goto ERR
+	}
+
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	if req.IsLike {
+
+		err = a.interactiveSvc.Like(ctx, a.biz, req.Id, claims.UserID)
+	} else {
+		err = a.interactiveSvc.CancelLike(ctx, a.biz, req.Id, claims.UserID)
+
+	}
+
+	switch err {
+	case nil:
+
+		a.l.INFO(logKey, fields.Add(logger.String("点赞/取消点赞成功")).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Field{"isLike", req.IsLike}).
+			Add(logger.Int[int64]("userId", claims.UserID))...)
+		return
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "系统错误",
+		})
+	}
+
+ERR:
+	a.l.ERROR(logKey,
+		fields.Add(logger.Error(err)).
+			Add(logger.Field{"IP", ctx.ClientIP()}).
+			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Field{"isLike", req.IsLike}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 	return
 }

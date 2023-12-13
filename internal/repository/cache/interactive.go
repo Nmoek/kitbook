@@ -10,12 +10,19 @@ import (
 var (
 	//go:embed lua/incr_cnt.lua
 	luaIncrCnt string
+	//go:embed lua/decr_cnt.lua
+	luaDecrCnt string
 )
 
-const fieldReadCnt = "read_cnt"
+const (
+	fieldReadCnt = "read_cnt"
+	fieldLikeCnt = "like_cnt"
+)
 
 type InteractiveCache interface {
 	IncreaseReadCntIfPresent(ctx context.Context, biz string, bizId int64) error
+	IncreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error
+	DecreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error
 }
 
 type RedisInteractiveCache struct {
@@ -52,4 +59,33 @@ func (r *RedisInteractiveCache) IncreaseReadCntIfPresent(ctx context.Context, bi
 // @return string
 func (r *RedisInteractiveCache) createKey(biz string, bizId int64) string {
 	return fmt.Sprintf("interactive:%s:%d", biz, bizId)
+}
+
+// @func: IncreaseLikeCntIfPresent
+// @date: 2023-12-13 22:11:39
+// @brief: 点赞数+1
+// @author: Kewin Li
+// @receiver r
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return error
+func (r *RedisInteractiveCache) IncreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error {
+	return r.client.Eval(ctx, luaIncrCnt, []string{r.createKey(biz, bizId)}, fieldLikeCnt, 1).Err()
+}
+
+// @func: DecreaseLikeCntIfPresent
+// @date: 2023-12-13 22:11:47
+// @brief: 点赞数-1
+// @author: Kewin Li
+// @receiver r
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return error
+func (r *RedisInteractiveCache) DecreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error {
+	return r.client.Eval(ctx, luaDecrCnt, []string{r.createKey(biz, bizId)}, fieldLikeCnt, 1).Err()
+
 }

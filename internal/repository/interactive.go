@@ -8,6 +8,8 @@ import (
 
 type InteractiveRepository interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error
+	IncreaseLikeCnt(ctx context.Context, biz string, bizId int64, userId int64) error
+	DecreaseLikeCnt(ctx context.Context, biz string, bizId int64, userId int64) error
 }
 
 type ArticleInteractiveRepository struct {
@@ -40,4 +42,45 @@ func (a *ArticleInteractiveRepository) IncreaseReadCnt(ctx context.Context, biz 
 	// 更新缓存
 	// 部分失败问题
 	return a.cache.IncreaseReadCntIfPresent(ctx, biz, bizId)
+}
+
+// @func: IncreaseLikeCnt
+// @date: 2023-12-13 22:01:27
+// @brief: 点赞数+1
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return error
+func (a *ArticleInteractiveRepository) IncreaseLikeCnt(ctx context.Context, biz string, bizId int64, userId int64) error {
+	// 1. 数据库
+	err := a.dao.AddLikeInfo(ctx, biz, bizId, userId)
+	if err != nil {
+		return err
+	}
+
+	// 2. 更新缓存
+	return a.cache.IncreaseLikeCntIfPresent(ctx, biz, bizId)
+}
+
+// @func: DecreaseLikeCnt
+// @date: 2023-12-13 22:01:32
+// @brief: 点赞数-1
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return error
+func (a *ArticleInteractiveRepository) DecreaseLikeCnt(ctx context.Context, biz string, bizId int64, userId int64) error {
+	// 1. 数据库
+	err := a.dao.DelLikeInfo(ctx, biz, bizId, userId)
+	if err != nil {
+		return err
+	}
+
+	return a.cache.DecreaseLikeCntIfPresent(ctx, biz, bizId)
 }

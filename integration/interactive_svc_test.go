@@ -163,58 +163,6 @@ func (a *InteractiveSvcSuite) Test_IncreaseReadCnt() {
 				}).Error
 				assert.NoError(t, err)
 
-				// 2. 缓存放数据
-			},
-			after: func(t *testing.T) {
-				// 1. 查数据库
-				var interactive dao.Interactive
-				err := a.db.Model(&dao.Interactive{}).Where("biz_id = ?", 3).First(&interactive).Error
-				assert.NoError(t, err)
-				assert.True(t, interactive.Utime > 0)
-				assert.True(t, interactive.Ctime == 777)
-				interactive.Utime = 0
-				interactive.Ctime = 0
-				assert.Equal(t, dao.Interactive{
-					Id:         3,
-					BizId:      3,
-					Biz:        "test",
-					ReadCnt:    4, // 阅读数
-					LikeCnt:    1,
-					CollectCnt: 2,
-				}, interactive)
-
-				// 2. 查缓存
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-				defer cancel()
-
-				key := createKey("test", 3)
-				res, err := a.rdb.Exists(ctx, key).Result()
-				assert.NoError(t, err)
-				assert.Equal(t, int64(0), res)
-
-			},
-
-			biz:   "test",
-			bizId: 3,
-		},
-		{
-			name: "数据库, 无缓存",
-			before: func(t *testing.T) {
-
-				// 1. 数据库放数据
-				err := a.db.Model(&dao.Interactive{}).Create(dao.Interactive{
-					Id:         3,
-					BizId:      3,
-					Biz:        "test",
-					ReadCnt:    3,
-					LikeCnt:    1,
-					CollectCnt: 2,
-					Utime:      777,
-					Ctime:      777,
-				}).Error
-				assert.NoError(t, err)
-
-				// 2. 缓存放数据
 			},
 			after: func(t *testing.T) {
 				// 1. 查数据库
