@@ -11,8 +11,12 @@ type InteractiveDao interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error
 	AddLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) error
 	DelLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) error
+	GetLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) (UserLikeInfo, error)
+
 	AddCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
 	DelCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
+	GetCollectionItem(ctx context.Context, biz string, bizId int64, userId int64) (UserCollectInfo, error)
+	Get(ctx context.Context, biz string, bizId int64) (Interactive, error)
 }
 
 type GORMInteractiveDao struct {
@@ -138,6 +142,25 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 	})
 }
 
+// @func: GetLikeInfo
+// @date: 2023-12-15 16:52:28
+// @brief: 查询用户点赞信息
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return UserLikeInfo
+// @return error
+func (g *GORMInteractiveDao) GetLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) (UserLikeInfo, error) {
+	var info UserLikeInfo
+	err := g.db.WithContext(ctx).
+		Where("biz_id = ? AND biz = ? AND user_id = ?", biz, bizId, userId).
+		First(&info).Error
+	return info, err
+}
+
 // @func: AddCollectionItem
 // @date: 2023-12-14 02:03:10
 // @brief: 增加收藏内容
@@ -219,13 +242,47 @@ func (g *GORMInteractiveDao) DelCollectionItem(ctx context.Context, biz string, 
 		}
 		// 2. 互动表 收藏数-1
 		return tx.Model(&Interactive{}).
-			Where("user_id = ? AND biz_id = ? AND biz = ?", userId, bizId, biz).
+			Where("user_id = ? AND biz_id = ? AND biz = ? AND status = ? ", userId, bizId, biz, 1). //注意: status=1 才是有效
 			Updates(map[string]any{
 				"collect_cnt": gorm.Expr("`collect_cnt` - 1"),
 				"utime":       now,
 			}).Error
 	})
 
+}
+
+// @func: GetCollectionItem
+// @date: 2023-12-15 16:58:12
+// @brief: 查询用户收藏信息
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param biz
+// @param bizId
+// @param userId
+// @return UserCollectInfo
+func (g *GORMInteractiveDao) GetCollectionItem(ctx context.Context, biz string, bizId int64, userId int64) (UserCollectInfo, error) {
+	var item UserCollectInfo
+	err := g.db.WithContext(ctx).
+		Where("biz_id = ? AND biz = ? AND user_id = ? AND status = ?", bizId, biz, userId, 1). //注意: status=1 才是有效
+		First(&item).Error
+	return item, err
+}
+
+// @func: Get
+// @date: 2023-12-15 17:37:20
+// @brief: 查询用户互动信息
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param biz
+// @param bizId
+// @return Interactive
+// @return error
+func (g *GORMInteractiveDao) Get(ctx context.Context, biz string, bizId int64) (Interactive, error) {
+	var intr Interactive
+	err := g.db.WithContext(ctx).Where("biz_id = ? AND biz = ?").First(&intr).Error
+	return intr, err
 }
 
 // Interactive

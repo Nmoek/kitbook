@@ -5,6 +5,7 @@ package web
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
 	ijwt "kitbook/internal/web/jwt"
@@ -439,7 +440,11 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	var claims ijwt.UserClaims
 	var artId int64
 	var err error
-	var art domain.Article
+	var (
+		eg   errgroup.Group
+		art  domain.Article
+		intr domain.Interactive
+	)
 
 	idStr := ctx.Param("id")
 	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
@@ -454,14 +459,30 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 		goto ERR
 	}
 
-	art, err = a.svc.GetPubById(ctx, artId)
+	// 并发1 查询文章内容
+	eg.Go(func() error {
+		var err2 error
+		art, err2 = a.svc.GetPubById(ctx, artId)
+		return err2
+	})
+
+	// 并发2 查询互动内容 阅读数、点赞数、收藏数
+	eg.Go(func() error {
+		var err2 error
+		intr, err2 = a.interactiveSvc.Get(ctx, a.biz, artId, claims.UserID)
+		return err2
+	})
+
+	// 等待全部查询完毕
+	err = eg.Wait()
 
 	switch err {
 	case nil:
 		a.l.INFO(logKey,
-			fields.Add(logger.String("读者查询成功")).
+			fields.Add(logger.String("帖子加载成功")).
 				Add(logger.Field{"IP", ctx.ClientIP()}).
-				Add(logger.Int[int64]("artId", artId))...)
+				Add(logger.Int[int64]("artId", artId)).
+				Add(logger.Int[int64]("userId", claims.UserID))...)
 
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "查询成功",
@@ -474,8 +495,15 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 				Status:     art.Status.ToUint8(),
 				Ctime:      art.Ctime.Format(time.DateTime),
 				Utime:      art.Utime.Format(time.DateTime),
+
+				ReadCnt:    intr.ReadCnt,
+				LikeCnt:    intr.LikeCnt,
+				CollectCnt: intr.CollectCnt,
+				Liked:      intr.Liked,
+				Collected:  intr.Collected,
 			}})
 
+		// TODO: 阅读数先查后加、先加后查问题
 		go func() {
 			newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
@@ -496,7 +524,7 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 		return
 	default:
 		ctx.JSON(http.StatusOK, Result{
-			Msg: "获取文章失败",
+			Msg: "加载文章失败",
 		})
 	}
 

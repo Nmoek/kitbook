@@ -17,6 +17,12 @@ type ArticleVo struct {
 	Status     uint8  `json:"status,omitempty"`
 	Ctime      string `json:"ctime,omitempty"`
 	Utime      string `json:"utime,omitempty"`
+
+	ReadCnt    int64 `json:"readCnt,omitempty"`
+	LikeCnt    int64 `json:"likeCnt,omitempty"`
+	CollectCnt int64 `json:"collectCnt,omitempty"`
+	Liked      bool  `json:"liked,omitempty"`
+	Collected  bool  `json:"collected,omitempty"`
 }
 
 func ConvertArticleVo(art *domain.Article, isAbstract bool) ArticleVo {
