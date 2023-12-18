@@ -16,6 +16,7 @@ func InitTables(db *gorm.DB) error {
 		&PublishedArticle{}, //帖子表-线上库
 		&Interactive{},      //互动表, 阅读数+点赞数+收藏数
 		&UserLikeInfo{},     //用户点赞信息表
+		&UserCollectInfo{},  //用户收藏信息表
 	)
 }
 

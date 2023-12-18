@@ -3,7 +3,6 @@
 package web
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
 	"kitbook/internal/domain"
@@ -18,8 +17,9 @@ import (
 type ArticleHandler struct {
 	svc            service.ArticleService
 	interactiveSvc service.InteractiveService
-	l              logger.Logger
-	biz            string
+
+	l   logger.Logger
+	biz string
 }
 
 func NewArticleHandler(svc service.ArticleService,
@@ -462,7 +462,7 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	// 并发1 查询文章内容
 	eg.Go(func() error {
 		var err2 error
-		art, err2 = a.svc.GetPubById(ctx, artId)
+		art, err2 = a.svc.GetPubById(ctx, artId, claims.UserID)
 		return err2
 	})
 
@@ -479,7 +479,7 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	switch err {
 	case nil:
 		a.l.INFO(logKey,
-			fields.Add(logger.String("帖子加载成功")).
+			fields.Add(logger.String("加载文章成功")).
 				Add(logger.Field{"IP", ctx.ClientIP()}).
 				Add(logger.Int[int64]("artId", artId)).
 				Add(logger.Int[int64]("userId", claims.UserID))...)
@@ -504,22 +504,23 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 			}})
 
 		// TODO: 阅读数先查后加、先加后查问题
-		go func() {
-			newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			// 阅读数+1
-			err2 := a.interactiveSvc.IncreaseReadCnt(newCtx, a.biz, artId)
-			if err2 != nil {
-				a.l.ERROR(logKey,
-					fields.Add(logger.Error(err2)).
-						Add(logger.String("阅读数更新失败")).
-						Add(logger.Field{"IP", ctx.ClientIP()}).
-						Add(logger.Field{"artId", artId}).
-						Add(logger.Int[int64]("userId", claims.UserID))...)
-			}
-
-		}()
+		// 阅读数+1 耦合实现
+		//go func() {
+		//	newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+		//	defer cancel()
+		//
+		//	// 阅读数+1
+		//	err2 := a.interactiveSvc.IncreaseReadCnt(newCtx, a.biz, artId)
+		//	if err2 != nil {
+		//		a.l.ERROR(logKey,
+		//			fields.Add(logger.Error(err2)).
+		//				Add(logger.String("阅读数更新失败")).
+		//				Add(logger.Field{"IP", ctx.ClientIP()}).
+		//				Add(logger.Field{"artId", artId}).
+		//				Add(logger.Int[int64]("userId", claims.UserID))...)
+		//	}
+		//
+		//}()
 
 		return
 	default:
@@ -545,8 +546,8 @@ ERR:
 // @param c
 func (a *ArticleHandler) Like(ctx *gin.Context) {
 	type LikeReq struct {
-		Id     int64 `json:"id"`
-		IsLike bool  `json:"isLike"`
+		Id   int64 `json:"id"`
+		Like bool  `json:"like"`
 	}
 	var req LikeReq
 	var err error
@@ -563,7 +564,7 @@ func (a *ArticleHandler) Like(ctx *gin.Context) {
 
 	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
 
-	if req.IsLike {
+	if req.Like {
 
 		err = a.interactiveSvc.Like(ctx, a.biz, req.Id, claims.UserID)
 	} else {
@@ -577,7 +578,7 @@ func (a *ArticleHandler) Like(ctx *gin.Context) {
 		a.l.INFO(logKey, fields.Add(logger.String("点赞/取消点赞成功")).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", req.Id}).
-			Add(logger.Field{"isLike", req.IsLike}).
+			Add(logger.Field{"isLike", req.Like}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 		return
 	default:
@@ -591,7 +592,7 @@ ERR:
 		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", req.Id}).
-			Add(logger.Field{"isLike", req.IsLike}).
+			Add(logger.Field{"isLike", req.Like}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 	return
 }

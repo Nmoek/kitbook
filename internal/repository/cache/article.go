@@ -209,7 +209,21 @@ func (r *RedisArticleCache) SetById(ctx context.Context, art domain.Article) err
 // @return domain.Article
 // @return error
 func (r *RedisArticleCache) GetPubById(ctx context.Context, artId int64) (domain.Article, error) {
-	panic("未实现接口")
+	var art domain.Article
+
+	val, err := r.client.Get(ctx, r.createPreCacheKey(artId)).Bytes()
+	if err != nil {
+		return domain.Article{}, err
+	}
+
+	// key不存在
+	if len(val) == 0 {
+		return domain.Article{}, ErrKeyNotExist
+	}
+
+	err = json.Unmarshal(val, &art)
+
+	return art, err
 }
 
 // @func: SetPubById
@@ -221,7 +235,12 @@ func (r *RedisArticleCache) GetPubById(ctx context.Context, artId int64) (domain
 // @param art
 // @return error
 func (r *RedisArticleCache) SetPubById(ctx context.Context, art domain.Article) error {
-	panic("未实现接口")
+	val, err := json.Marshal(&art)
+	if err != nil {
+		return err
+	}
+
+	return r.client.Set(ctx, r.createPreCacheKey(art.Id), val, 10*time.Minute).Err()
 }
 
 // @func: SetPub
@@ -233,7 +252,12 @@ func (r *RedisArticleCache) SetPubById(ctx context.Context, art domain.Article) 
 // @param art
 // @return error
 func (r *RedisArticleCache) SetPub(ctx context.Context, art domain.Article) error {
-	panic("未实现接口")
+	val, err := json.Marshal(&art)
+	if err != nil {
+		return err
+	}
+
+	return r.client.Set(ctx, r.createPreCacheKey(art.Id), val, 10*time.Minute).Err()
 }
 
 // @func: createKey

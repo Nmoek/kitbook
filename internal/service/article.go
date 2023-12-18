@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"kitbook/internal/domain"
+	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/pkg/logger"
 )
@@ -18,7 +19,7 @@ type ArticleService interface {
 	Withdraw(ctx context.Context, art domain.Article) error
 	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error)
 	GetById(ctx context.Context, artId int64) (domain.Article, error)
-	GetPubById(ctx context.Context, artId int64) (domain.Article, error)
+	GetPubById(ctx context.Context, artId int64, userId int64) (domain.Article, error)
 }
 
 // NormalArticleService
@@ -26,6 +27,8 @@ type ArticleService interface {
 type NormalArticleService struct {
 	//  不分库
 	repo repository.ArticleRepository
+
+	producer article.Producer
 
 	/// V1 版本 在service层做数据同步
 	authorRepo repository.ArticleAuthorRepository
@@ -35,9 +38,12 @@ type NormalArticleService struct {
 	l logger.Logger
 }
 
-func NewNormalArticleService(repo repository.ArticleRepository, l logger.Logger) ArticleService {
+func NewNormalArticleService(repo repository.ArticleRepository,
+	producer article.Producer,
+	l logger.Logger) ArticleService {
 	return &NormalArticleService{
-		repo: repo,
+		repo:     repo,
+		producer: producer,
 	}
 }
 
@@ -194,6 +200,29 @@ func (n *NormalArticleService) GetById(ctx context.Context, artId int64) (domain
 // @param userId
 // @return []domain.Article
 // @return error
-func (n *NormalArticleService) GetPubById(ctx context.Context, artId int64) (domain.Article, error) {
-	return n.repo.GetPubById(ctx, artId)
+func (n *NormalArticleService) GetPubById(ctx context.Context, artId int64, userId int64) (domain.Article, error) {
+	art, err := n.repo.GetPubById(ctx, artId)
+
+	// 发送阅读数+1 消息
+	go func() {
+		if err == nil {
+			err2 := n.producer.ProducerReadEvent(article.ReadEvent{
+				ArtId:  artId,
+				UserId: userId,
+			})
+
+			if err2 != nil {
+				// TODO: 日志埋点，消息发送失败
+				n.l.ERROR("GetPubById",
+					logger.Error(err2),
+					logger.String("阅读数+1消息发送失败"),
+					logger.Int[int64]("artId", artId),
+					logger.Int[int64]("userId", userId))
+			}
+
+		}
+
+	}()
+
+	return art, err
 }

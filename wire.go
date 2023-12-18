@@ -3,8 +3,8 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
@@ -21,15 +21,22 @@ var interactiveSvcSet = wire.NewSet(
 	service.NewArticleInteractiveService,
 )
 
-func InitWebServer() *gin.Engine {
+func InitWebServer() *App {
 
 	wire.Build(
 		// 第三方依赖
 		ioc.InitDB,
 		ioc.InitRedis,
+		ioc.InitLogger,
+		ioc.InitSaramaClient,
+		ioc.InitSyncProducer,
 		//ioc.InitFreeCache,
 
 		interactiveSvcSet,
+
+		article.NewSaramaSyncProducer,
+		article.NewInteractiveReadEventConsumer,
+		ioc.InitConsumers,
 
 		dao.NewGormUserDao,
 		dao.NewGormArticleDao,
@@ -45,19 +52,20 @@ func InitWebServer() *gin.Engine {
 		//  TODO: 如何使用多个不同的限流器
 		ioc.InitLimiter,
 		ioc.InitSmsService,
+		ioc.InitWechatService,
 		service.NewNormalUserService,
 		service.NewPhoneCodeService,
-		ioc.InitWechatService,
 		service.NewNormalArticleService,
 
-		ioc.InitLogger,
 		ioc.InitGinMiddlewares,
 		ijwt.NewRedisJWTHandler,
 		web.NewUserHandler,
 		web.NewArticleHandler,
 		web.NewOAuth2WechatHandler,
-		ioc.InitWebService,
+		ioc.InitWebServer,
+
+		wire.Struct(new(App), "*"),
 	)
 
-	return gin.Default()
+	return new(App)
 }

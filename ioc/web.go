@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-func InitWebService(middlewares []gin.HandlerFunc,
+func InitWebServer(middlewares []gin.HandlerFunc,
 	userHdl *web.UserHandler,
 	wechatHdl *web.OAuth2WechatHandler,
 	articleHdl *web.ArticleHandler) *gin.Engine {

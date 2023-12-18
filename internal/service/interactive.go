@@ -98,7 +98,7 @@ func (a *ArticleInteractiveService) CancelCollect(ctx context.Context, biz strin
 // @return domain.Interactive
 // @return error
 func (a *ArticleInteractiveService) Get(ctx context.Context, biz string, bizId int64, userId int64) (domain.Interactive, error) {
-	// 1. 查询库 互动表中数据
+	// 1. 查询 互动内容数据
 	intr, err := a.repo.Get(ctx, biz, bizId)
 	if err != nil {
 		return domain.Interactive{}, err

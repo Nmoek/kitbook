@@ -5,6 +5,7 @@ package startup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
@@ -18,6 +19,9 @@ var thirdPartySet = wire.NewSet(
 	InitDB,
 	InitRedis,
 	InitLogger,
+	InitSaramaClient,
+	InitSyncProducer,
+	InitConsumers,
 )
 
 var interactiveSvcSet = wire.NewSet(
@@ -52,6 +56,8 @@ func InitWebServer() *gin.Engine {
 		repository.NewcodeRepository,
 		repository.NewCacheArticleRepository,
 
+		article.NewSaramaSyncProducer,
+
 		//  TODO: 如何使用多个不同的限流器
 		ioc.InitLimiter,
 		ioc.InitSmsService,
@@ -65,7 +71,7 @@ func InitWebServer() *gin.Engine {
 		web.NewUserHandler,
 		web.NewArticleHandler,
 		web.NewOAuth2WechatHandler,
-		ioc.InitWebService,
+		ioc.InitWebServer,
 	)
 
 	return gin.Default()
@@ -76,6 +82,8 @@ func NewArticleHandler(dao dao.ArticleDao) *web.ArticleHandler {
 		thirdPartySet,
 		userSvcProvider,
 		interactiveSvcSet,
+
+		article.NewSaramaSyncProducer,
 
 		cache.NewRedisArticleCache,
 		repository.NewCacheArticleRepository,

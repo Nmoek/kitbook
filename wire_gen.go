@@ -7,8 +7,8 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
@@ -20,7 +20,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitWebServer() *gin.Engine {
+func InitWebServer() *App {
 	cmdable := ioc.InitRedis()
 	limiter := ioc.InitLimiter(cmdable)
 	jwtHandler := jwt.NewRedisJWTHandler(cmdable)
@@ -41,14 +41,23 @@ func InitWebServer() *gin.Engine {
 	articleDao := dao.NewGormArticleDao(db)
 	articleCache := cache.NewRedisArticleCache(cmdable)
 	articleRepository := repository.NewCacheArticleRepository(articleDao, articleCache, userRepository)
-	articleService := service.NewNormalArticleService(articleRepository, logger)
+	client := ioc.InitSaramaClient()
+	syncProducer := ioc.InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewNormalArticleService(articleRepository, producer, logger)
 	interactiveDao := dao.NewGORMInteractiveDao(db)
 	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
 	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
 	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
-	engine := ioc.InitWebService(v, userHandler, oAuth2WechatHandler, articleHandler)
-	return engine
+	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
+	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
+	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
+	app := &App{
+		server:    engine,
+		consumers: v2,
+	}
+	return app
 }
 
 // wire.go:

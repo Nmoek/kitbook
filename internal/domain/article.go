@@ -18,7 +18,7 @@ type Author struct {
 }
 
 // 截取摘要的最大长度
-const abstractMaxLen = 1024
+const abstractMaxLen = 256
 
 // @func: Abstract
 // @date: 2023-12-04 22:26:53

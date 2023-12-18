@@ -14,8 +14,8 @@ func InitMongoDB() *mongo.Database {
 	defer cancel()
 
 	//TODO: 打开监视器会引发test框架panic
-	//monitor := &event.CommandMonitor{
-	//	Started: func(ctx context.Context, startedEvent *event.CommandStartedEvent) {
+	//monitor := &events.CommandMonitor{
+	//	Started: func(ctx context.Context, startedEvent *events.CommandStartedEvent) {
 	//		fmt.Printf("[mongo command msg] %v \n", startedEvent.Command)
 	//	},
 	//}

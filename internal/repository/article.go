@@ -206,7 +206,7 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 
 	// 进行发表时缓存
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
 		// TODO: 发表缓存优化点
@@ -214,8 +214,9 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 		// 2. 对新用户进行帖子流量倾斜来设置过期时间
 		// 3. 对内容的优质程度来设置过期时间
 		// ... 等等 这些角度的考虑都是对内容搜推有着极大影响！！！
-		author, err := c.userRepo.FindById(ctx, art.Author.Id)
-		if err != nil {
+
+		author, err2 := c.userRepo.FindById(ctx2, art.Author.Id)
+		if err2 != nil {
 			// TODO: 日志埋点
 			return
 		}
@@ -224,8 +225,8 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 			Name: author.Nickname,
 		}
 
-		err = c.cache.SetPub(ctx, art)
-		if err != nil {
+		err2 = c.cache.SetPub(ctx2, art)
+		if err2 != nil {
 			// TODO: 日志埋点
 		}
 
@@ -362,7 +363,7 @@ func (c *CacheArticleRepository) GetById(ctx context.Context, artId int64) (doma
 func (c *CacheArticleRepository) GetPubById(ctx context.Context, artId int64) (domain.Article, error) {
 	// 取帖子缓存
 	art, err := c.cache.GetPubById(ctx, artId)
-	if err == nil {
+	if err == nil && err != cache.ErrKeyNotExist {
 		return art, err
 	}
 
@@ -377,10 +378,10 @@ func (c *CacheArticleRepository) GetPubById(ctx context.Context, artId int64) (d
 
 	// 帖子缓存回写
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx2, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		err := c.cache.SetPubById(ctx, art)
-		if err != nil {
+		err2 := c.cache.SetPubById(ctx2, art)
+		if err2 != nil {
 			//TODO: 缓存回写失败 日志埋点
 		}
 

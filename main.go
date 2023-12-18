@@ -9,7 +9,14 @@ func main() {
 	initViper()
 
 	// 初始化Web服务
-	server := InitWebServer()
+	app := InitWebServer()
+	server := app.server
+	for _, c := range app.consumers {
+		err := c.Start()
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	//server := gin.Default()
 	//

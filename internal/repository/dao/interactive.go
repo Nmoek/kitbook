@@ -122,7 +122,7 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 	// 1. 用户点赞表 软删除
 	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Model(&UserLikeInfo{}).
-			Where("user_id = ? AND biz_id = ? AND biz = ?").
+			Where("user_id = ? AND biz_id = ? AND biz = ?", userId, bizId, biz).
 			Updates(map[string]any{
 				"status": 0, //当前点赞无效
 				"utime":  now,
@@ -134,7 +134,7 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 
 		// 2. 互动表，点赞数-1
 		return tx.Model(&Interactive{}).
-			Where("biz_id = ? AND biz = ?").
+			Where("biz_id = ? AND biz = ?", bizId, biz).
 			Updates(map[string]any{
 				"like_cnt": gorm.Expr("`like_cnt` - 1"),
 				"utime":    now,
@@ -281,7 +281,7 @@ func (g *GORMInteractiveDao) GetCollectionItem(ctx context.Context, biz string, 
 // @return error
 func (g *GORMInteractiveDao) Get(ctx context.Context, biz string, bizId int64) (Interactive, error) {
 	var intr Interactive
-	err := g.db.WithContext(ctx).Where("biz_id = ? AND biz = ?").First(&intr).Error
+	err := g.db.WithContext(ctx).Where("biz_id = ? AND biz = ?", bizId, biz).First(&intr).Error
 	return intr, err
 }
 
@@ -292,7 +292,7 @@ type Interactive struct {
 
 	// 建立联合唯一索引<bizId, biz>
 	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
-	Biz   string `gorm:"type=varchar(128);uniqueIndex:uid_biz_type_id"`
+	Biz   string `gorm:"type:varchar(128);uniqueIndex:uid_biz_type_id"`
 
 	// 阅读数
 	ReadCnt int64
@@ -312,7 +312,7 @@ type UserLikeInfo struct {
 	UserId int64 `gorm:"uniqueIndex:uid_biz_type_id"`
 	// BizId + Biz 共同表示哪个业务的哪一条记录
 	BizId int64  `gorm:"uniqueIndex:uid_biz_type_id"`
-	Biz   string `gorm:"type=varchar(128);uniqueIndex:uid_biz_type_id"`
+	Biz   string `gorm:"type:varchar(128);uniqueIndex:uid_biz_type_id"`
 
 	// 点赞是否有效
 	Status int8
@@ -329,7 +329,7 @@ type UserCollectInfo struct {
 	UserId int64 `gorm:"uniqueIndex:uid_biz_type_id"`
 	// BizId + Biz 共同表示哪个业务的哪一条记录
 	BizId int64  `gorm:"uniqueIndex:uid_biz_type_id"`
-	Biz   string `gorm:"type=varchar(128);uniqueIndex:uid_biz_type_id"`
+	Biz   string `gorm:"type:varchar(128);uniqueIndex:uid_biz_type_id"`
 
 	// 被收藏在哪一个收藏夹
 	// 注意: 一个资源只能被收藏一次, 否则就会出现多个收藏夹中同一个资源
