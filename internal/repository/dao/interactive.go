@@ -17,6 +17,7 @@ type InteractiveDao interface {
 	DelCollectionItem(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
 	GetCollectionItem(ctx context.Context, biz string, bizId int64, userId int64) (UserCollectInfo, error)
 	Get(ctx context.Context, biz string, bizId int64) (Interactive, error)
+	BatchIncreaseReadCnt(ctx context.Context, bizs []string, bizIds []int64) error
 }
 
 type GORMInteractiveDao struct {
@@ -54,6 +55,32 @@ func (g *GORMInteractiveDao) IncreaseReadCnt(ctx context.Context, biz string, bi
 		Ctime:   now,
 		Utime:   now,
 	}).Error
+}
+
+// @func: BatchIncreaseReadCnt
+// @date: 2023-12-19 03:20:46
+// @brief: 数据库操作-一次事务提交多条记录
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param bizs
+// @param bizIds
+// @return error
+func (g *GORMInteractiveDao) BatchIncreaseReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {
+
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDao := NewGORMInteractiveDao(tx)
+
+		for i := 0; i < len(bizs); i++ {
+			err := txDao.IncreaseReadCnt(ctx, bizs[i], bizIds[i])
+			if err != nil {
+				//TODO: 日志埋点
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 // @func: AddLikeInfo

@@ -17,6 +17,7 @@ type InteractiveRepository interface {
 	Get(ctx context.Context, biz string, bizId int64) (domain.Interactive, error)
 	Liked(ctx context.Context, biz string, bizId int64, userId int64) (bool, error)
 	Collectd(ctx context.Context, biz string, bizId int64, userId int64) (bool, error)
+	BatchIncreaseReadCnt(ctx context.Context, bizs []string, bizIds []int64) error
 }
 
 type ArticleInteractiveRepository struct {
@@ -217,6 +218,36 @@ func (a *ArticleInteractiveRepository) Collectd(ctx context.Context, biz string,
 	default:
 		return false, err
 	}
+}
+
+// @func: BatchIncreaseReadCnt
+// @date: 2023-12-19 03:17:21
+// @brief: 批量提交-阅读数+1
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param bizs
+// @param bizIds
+// @return error
+func (a *ArticleInteractiveRepository) BatchIncreaseReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {
+	err := a.dao.BatchIncreaseReadCnt(ctx, bizs, bizIds)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+
+		for i := 0; i < len(bizs); i++ {
+			err2 := a.cache.IncreaseReadCntIfPresent(ctx, bizs[i], bizIds[i])
+			if err2 != nil {
+				// TODO:日志埋点
+				continue
+			}
+		}
+
+	}()
+
+	return nil
 }
 
 // @func: ConvertsDomainInteractive

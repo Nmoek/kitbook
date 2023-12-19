@@ -1,5 +1,5 @@
 // Package saramax
-// @Description: 对sarama消费API二次封装
+// @Description: 同步消费-单次提交
 package saramax
 
 import (
