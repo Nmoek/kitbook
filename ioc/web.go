@@ -3,14 +3,13 @@
 package ioc
 
 import (
-	"context"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"kitbook/internal/web"
 	ijwt "kitbook/internal/web/jwt"
 	"kitbook/internal/web/middlewares"
-	"kitbook/pkg/ginx/ratelimit"
+	"kitbook/pkg/ginx/prometheus"
 	"kitbook/pkg/limiter"
 	"kitbook/pkg/logger"
 	"strings"
@@ -34,6 +33,13 @@ func InitGinMiddlewares(client redis.Cmdable,
 	limiter limiter.Limiter,
 	jwtHdl ijwt.JWTHandler,
 	l logger.Logger) []gin.HandlerFunc {
+	pb := &prometheus.Builder{
+		Namespace: "kewin",
+		Subsystem: "kitbook",
+		Name:      "gin_http",
+		Help:      "统计gin中http接口数据",
+	}
+
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, //是否允许cookie
@@ -50,16 +56,18 @@ func InitGinMiddlewares(client redis.Cmdable,
 			},
 			MaxAge: 12 * time.Hour,
 		}),
+		pb.BuildResponseTIme(),
+		pb.BuildActiveRequest(),
 		//middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin(),
 
 		//限流器中间件 1000 QPS/s
-		ratelimit.NewMiddlewareBuilder(limiter).Build(),
+		//ratelimit.NewMiddlewareBuilder(limiter).Build(),
 		// 传入要实现的日志打印
-		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
-
-			l.DEBUG("sys_log", logger.Field{Key: "req", Val: al})
-
-		}).AllowReqBody().AllowRespBody().Build(),
+		//middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
+		//
+		//	l.DEBUG("sys_log", logger.Field{Key: "req", Val: al})
+		//
+		//}).AllowReqBody().AllowRespBody().Build(),
 		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin_LongShortToken(),
 	}
 
