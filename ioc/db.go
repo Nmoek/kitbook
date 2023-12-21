@@ -3,11 +3,14 @@
 package ioc
 
 import (
+	prometheus2 "github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
+	"gorm.io/plugin/prometheus"
 	"kitbook/internal/repository/dao"
+	"kitbook/pkg/gormx"
 	"kitbook/pkg/logger"
 )
 
@@ -28,12 +31,49 @@ func InitDB(l logger.Logger) *gorm.DB {
 	}
 	db, err := gorm.Open(mysql.Open(cfg.DSN), &gorm.Config{
 		Logger: glogger.New(gormLoggerFunc(l.DEBUG), glogger.Config{
-			// 打印慢查询阈值
-			SlowThreshold: 0,
+			Colorful:      true,
+			SlowThreshold: 0, // 打印慢查询阈值
 			LogLevel:      glogger.Info,
 		}),
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Use(prometheus.New(prometheus.Config{
+		DBName:          "kitbook",
+		RefreshInterval: 15, // 多久获取一次连接池的状态
+		MetricsCollector: []prometheus.MetricsCollector{
+			&prometheus.MySQL{
+				VariableNames: []string{"thread_running"},
+			},
+		},
+	}))
+
+	if err != nil {
+		panic(err)
+	}
+
+	cb := gormx.NewCallbacks(prometheus2.SummaryOpts{
+		Namespace: "kewin",
+		Subsystem: "kitbook",
+		Name:      "gorm_db",
+		Help:      "统计gorm查询库的执行时间",
+		ConstLabels: map[string]string{
+			"instance_id": "my_instance",
+		},
+
+		Objectives: map[float64]float64{
+			0.5:   0.01,
+			0.75:  0.01,
+			0.9:   0.01,
+			0.99:  0.001,
+			0.999: 0.0001,
+		},
+	})
+
+	err = db.Use(cb)
 	if err != nil {
 		panic(err)
 	}
