@@ -12,6 +12,7 @@ import (
 	context "context"
 	domain "kitbook/internal/domain"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -67,6 +68,51 @@ func (m *MockArticleRepository) GetByAuthor(ctx context.Context, userId int64, o
 func (mr *MockArticleRepositoryMockRecorder) GetByAuthor(ctx, userId, offset, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleRepository)(nil).GetByAuthor), ctx, userId, offset, limit)
+}
+
+// GetById mocks base method.
+func (m *MockArticleRepository) GetById(ctx context.Context, artId int64) (domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetById", ctx, artId)
+	ret0, _ := ret[0].(domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetById indicates an expected call of GetById.
+func (mr *MockArticleRepositoryMockRecorder) GetById(ctx, artId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockArticleRepository)(nil).GetById), ctx, artId)
+}
+
+// GetPubById mocks base method.
+func (m *MockArticleRepository) GetPubById(ctx context.Context, artId int64) (domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPubById", ctx, artId)
+	ret0, _ := ret[0].(domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPubById indicates an expected call of GetPubById.
+func (mr *MockArticleRepositoryMockRecorder) GetPubById(ctx, artId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubById", reflect.TypeOf((*MockArticleRepository)(nil).GetPubById), ctx, artId)
+}
+
+// ListPub mocks base method.
+func (m *MockArticleRepository) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPub", ctx, start, offset, limit)
+	ret0, _ := ret[0].([]domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPub indicates an expected call of ListPub.
+func (mr *MockArticleRepositoryMockRecorder) ListPub(ctx, start, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPub", reflect.TypeOf((*MockArticleRepository)(nil).ListPub), ctx, start, offset, limit)
 }
 
 // Sync mocks base method.

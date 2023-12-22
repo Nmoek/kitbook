@@ -23,6 +23,7 @@ type ArticleRepository interface {
 	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error)
 	GetById(ctx context.Context, artId int64) (domain.Article, error)
 	GetPubById(ctx context.Context, artId int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]domain.Article, error)
 }
 
 type CacheArticleRepository struct {
@@ -418,6 +419,32 @@ func (c *CacheArticleRepository) preCache(ctx context.Context, arts []domain.Art
 	}
 
 	return nil
+}
+
+// @func: ListPub
+// @date: 2023-12-28 23:29:50
+// @brief: 热榜服务-查询出一批帖子
+// @author: Kewin Li
+// @receiver c
+// @param ctx
+// @param start
+// @param offset
+// @param limit
+// @return []domain.Article
+// @return error
+func (c *CacheArticleRepository) ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]domain.Article, error) {
+
+	artsDao, err := c.dao.ListPub(ctx, start, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	artsDomain := make([]domain.Article, len(artsDao))
+	for i, art := range artsDao {
+		artsDomain[i] = ConvertsDomainArticleFromLive(&art)
+	}
+
+	return artsDomain, nil
 }
 
 // @func: convertsDominUser

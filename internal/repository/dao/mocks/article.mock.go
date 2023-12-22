@@ -12,6 +12,7 @@ import (
 	context "context"
 	dao "kitbook/internal/repository/dao"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -54,6 +55,36 @@ func (mr *MockArticleDaoMockRecorder) GetByAuthor(ctx, userId, offset, limit any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleDao)(nil).GetByAuthor), ctx, userId, offset, limit)
 }
 
+// GetById mocks base method.
+func (m *MockArticleDao) GetById(ctx context.Context, artId int64) (dao.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetById", ctx, artId)
+	ret0, _ := ret[0].(dao.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetById indicates an expected call of GetById.
+func (mr *MockArticleDaoMockRecorder) GetById(ctx, artId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockArticleDao)(nil).GetById), ctx, artId)
+}
+
+// GetPubById mocks base method.
+func (m *MockArticleDao) GetPubById(ctx context.Context, artId int64) (dao.PublishedArticle, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPubById", ctx, artId)
+	ret0, _ := ret[0].(dao.PublishedArticle)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPubById indicates an expected call of GetPubById.
+func (mr *MockArticleDaoMockRecorder) GetPubById(ctx, artId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubById", reflect.TypeOf((*MockArticleDao)(nil).GetPubById), ctx, artId)
+}
+
 // Insert mocks base method.
 func (m *MockArticleDao) Insert(ctx context.Context, art dao.Article) (int64, error) {
 	m.ctrl.T.Helper()
@@ -67,6 +98,21 @@ func (m *MockArticleDao) Insert(ctx context.Context, art dao.Article) (int64, er
 func (mr *MockArticleDaoMockRecorder) Insert(ctx, art any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockArticleDao)(nil).Insert), ctx, art)
+}
+
+// ListPub mocks base method.
+func (m *MockArticleDao) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]dao.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPub", ctx, start, offset, limit)
+	ret0, _ := ret[0].([]dao.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPub indicates an expected call of ListPub.
+func (mr *MockArticleDaoMockRecorder) ListPub(ctx, start, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPub", reflect.TypeOf((*MockArticleDao)(nil).ListPub), ctx, start, offset, limit)
 }
 
 // Sync mocks base method.

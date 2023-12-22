@@ -9,6 +9,7 @@ import (
 	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/pkg/logger"
+	"time"
 )
 
 var ErrInvalidUpdate = errors.New("非法操作")
@@ -20,6 +21,7 @@ type ArticleService interface {
 	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]domain.Article, error)
 	GetById(ctx context.Context, artId int64) (domain.Article, error)
 	GetPubById(ctx context.Context, artId int64, userId int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]domain.Article, error)
 }
 
 // NormalArticleService
@@ -225,4 +227,19 @@ func (n *NormalArticleService) GetPubById(ctx context.Context, artId int64, user
 	}()
 
 	return art, err
+}
+
+// @func: ListPub
+// @date: 2023-12-27 00:46:56
+// @brief: 热榜服务-分批查出帖子记录
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param start !很关键的入参, 需要一个准确的固定的时间点来确定查询的起点
+// @param offset
+// @param limit
+// @return []domain.Article
+// @return error
+func (n *NormalArticleService) ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]domain.Article, error) {
+	return n.repo.ListPub(ctx, start, offset, limit)
 }

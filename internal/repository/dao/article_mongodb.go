@@ -152,3 +152,8 @@ func (m *MongoDBArticleDAO) GetPubById(ctx context.Context, artId int64) (Publis
 	//TODO implement me
 	panic("implement me")
 }
+
+func (m *MongoDBArticleDAO) ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]PublishedArticle, error) {
+	//TODO implement me
+	panic("implement me")
+}

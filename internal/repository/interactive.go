@@ -18,6 +18,7 @@ type InteractiveRepository interface {
 	Liked(ctx context.Context, biz string, bizId int64, userId int64) (bool, error)
 	Collectd(ctx context.Context, biz string, bizId int64, userId int64) (bool, error)
 	BatchIncreaseReadCnt(ctx context.Context, bizs []string, bizIds []int64) error
+	GetByIds(ctx context.Context, biz string, bizIds []int64) ([]domain.Interactive, error)
 }
 
 type ArticleInteractiveRepository struct {
@@ -153,7 +154,7 @@ func (a *ArticleInteractiveRepository) Get(ctx context.Context, biz string, bizI
 	// 1. 查缓存
 	intrDomain, err := a.cache.Get(ctx, biz, bizId)
 	if err == nil {
-		return intrDomain, err
+		return intrDomain, nil
 	}
 	//TODO: 日志埋点，缓存查询失败错误信息
 
@@ -250,6 +251,57 @@ func (a *ArticleInteractiveRepository) BatchIncreaseReadCnt(ctx context.Context,
 	return nil
 }
 
+// @func: GetByIds
+// @date: 2023-12-28 23:47:56
+// @brief: 热榜查询-根据帖子id查询出对应的互动数据-单条查询
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param biz
+// @param bizIds
+// @return map[int64]domain.Interactive
+// @return error
+func (a *ArticleInteractiveRepository) GetByIdsV1(ctx context.Context, biz string, bizIds []int64) ([]domain.Interactive, error) {
+
+	intrs := make([]domain.Interactive, 0, len(bizIds))
+
+	for _, bizId := range bizIds {
+		intr, err := a.Get(ctx, biz, bizId)
+		if err != nil {
+			return nil, err
+		}
+
+		intrs = append(intrs, intr)
+	}
+
+	return intrs, nil
+}
+
+// @func: GetByIds
+// @date: 2023-12-29 00:18:58
+// @brief: 热榜查询-批量查询
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param biz
+// @param bizIds
+// @return []domain.Interactive
+// @return error
+func (a *ArticleInteractiveRepository) GetByIds(ctx context.Context, biz string, bizIds []int64) ([]domain.Interactive, error) {
+	var intrsDomain []domain.Interactive
+
+	intrsDao, err := a.dao.GetByIds(ctx, biz, bizIds)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, intr := range intrsDao {
+		intrsDomain = append(intrsDomain, a.ConvertsDomainInteractive(&intr))
+	}
+
+	return intrsDomain, nil
+}
+
 // @func: ConvertsDomainInteractive
 // @date: 2023-12-15 17:30:22
 // @brief: Interactive DAO--->Domain
@@ -259,6 +311,7 @@ func (a *ArticleInteractiveRepository) BatchIncreaseReadCnt(ctx context.Context,
 // @return domain.Interactive
 func (a *ArticleInteractiveRepository) ConvertsDomainInteractive(i *dao.Interactive) domain.Interactive {
 	return domain.Interactive{
+		BizId:      i.BizId,
 		ReadCnt:    i.ReadCnt,
 		LikeCnt:    i.LikeCnt,
 		CollectCnt: i.CollectCnt,
@@ -274,6 +327,7 @@ func (a *ArticleInteractiveRepository) ConvertsDomainInteractive(i *dao.Interact
 // @return domain.Interactive
 func (a *ArticleInteractiveRepository) ConvertsDaoInteractive(i *domain.Interactive) dao.Interactive {
 	return dao.Interactive{
+		BizId:      i.BizId,
 		ReadCnt:    i.ReadCnt,
 		LikeCnt:    i.LikeCnt,
 		CollectCnt: i.CollectCnt,

@@ -5,6 +5,8 @@ echo "start mock tool..."
 mockgen -source=D:./internal/service/user.go -package=svcmocks -destination=./internal/service/mocks/user.mock.go
 mockgen -source=D:./internal/service/code.go -package=svcmocks -destination=./internal/service/mocks/code.mock.go
 mockgen -source=D:./internal/service/article.go -package=svcmocks -destination=./internal/service/mocks/article.mock.go
+mockgen -source=D:./internal/service/interactive.go -package=svcmocks -destination=./internal/service/mocks/interactive.mock.go
+
 
 mockgen -source=D:./internal/service/sms/types.go -package=smsmocks -destination=./internal/service/sms/mocks/sms.mock.go
 

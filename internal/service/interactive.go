@@ -14,6 +14,7 @@ type InteractiveService interface {
 	Collect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
 	CancelCollect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error
 	Get(ctx context.Context, biz string, bizId int64, userId int64) (domain.Interactive, error)
+	GetByIds(ctx context.Context, biz string, bizIds []int64) (map[int64]domain.Interactive, error)
 }
 
 type ArticleInteractiveService struct {
@@ -131,4 +132,28 @@ func (a *ArticleInteractiveService) Get(ctx context.Context, biz string, bizId i
 	// TODO: 弱校验, 互动数据查询失败对于文章主体内容并不影响，不一定非要报错处理
 	// TODO: 系统降级，当负载较高时, 上述两个并发查询都可以不再进行查询
 	return intr, eg.Wait()
+}
+
+// @func: GetByIds
+// @date: 2023-12-27 00:49:52
+// @brief: 热榜服务-分批查出点赞数
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param biz
+// @param bizIds
+// @return map[int64]domain.Article
+// @return error
+func (a *ArticleInteractiveService) GetByIds(ctx context.Context, biz string, bizIds []int64) (map[int64]domain.Interactive, error) {
+	res := map[int64]domain.Interactive{}
+	intrs, err := a.repo.GetByIds(ctx, biz, bizIds)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, intr := range intrs {
+		res[intr.BizId] = intr
+	}
+
+	return res, nil
 }

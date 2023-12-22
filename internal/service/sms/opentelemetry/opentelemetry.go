@@ -20,10 +20,10 @@ func NewDecorator(svc sms.Service, tracer trace.Tracer) *Decorator {
 }
 
 func (d *Decorator) Send(ctx context.Context, templateId string, args []string, phoneNumber []string) error {
-	ctx, span := d.tracer.Start(ctx, "sms")
+	tpCtx, span := d.tracer.Start(ctx, "sms")
 	span.SetAttributes(attribute.String("tpl", templateId))
 	span.AddEvent("发送短信")
-	err := d.Service.Send(ctx, templateId, args, phoneNumber)
+	err := d.Service.Send(tpCtx, templateId, args, phoneNumber)
 	if err != nil {
 		span.RecordError(err)
 	}

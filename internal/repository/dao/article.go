@@ -7,6 +7,7 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"kitbook/internal/domain"
 	"time"
 )
 
@@ -20,6 +21,7 @@ type ArticleDao interface {
 	GetByAuthor(ctx context.Context, userId int64, offset int, limit int) ([]Article, error)
 	GetById(ctx context.Context, artId int64) (Article, error)
 	GetPubById(ctx context.Context, artId int64) (PublishedArticle, error)
+	ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]PublishedArticle, error)
 }
 
 type GormArticleDao struct {
@@ -303,6 +305,26 @@ func (g *GormArticleDao) GetPubById(ctx context.Context, artId int64) (Published
 	err := g.db.WithContext(ctx).Where("id = ?", artId).First(&art).Error
 
 	return art, err
+}
+
+// @func: ListPub
+// @date: 2023-12-28 23:33:09
+// @brief: 热榜服务-查询出一批帖子数据
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param start
+// @param offset
+// @param limit
+// @return []Article
+// @return error
+func (g *GormArticleDao) ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]PublishedArticle, error) {
+	var arts []PublishedArticle
+	err := g.db.WithContext(ctx).Where("utime < ? AND status = ?", start.UnixMilli(), domain.ArticleStatusPublished).
+		Offset(offset).
+		Limit(limit).
+		First(&arts).Error
+	return arts, err
 }
 
 type Article struct {

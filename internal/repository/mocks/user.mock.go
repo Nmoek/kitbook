@@ -68,8 +68,8 @@ func (mr *MockUserRepositoryMockRecorder) FindByEmail(ctx, email any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByEmail", reflect.TypeOf((*MockUserRepository)(nil).FindByEmail), ctx, email)
 }
 
-// FindByID mocks base method.
-func (m *MockUserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
+// FindById mocks base method.
+func (m *MockUserRepository) FindById(ctx context.Context, id int64) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindById", ctx, id)
 	ret0, _ := ret[0].(domain.User)
@@ -77,10 +77,10 @@ func (m *MockUserRepository) FindByID(ctx context.Context, id int64) (domain.Use
 	return ret0, ret1
 }
 
-// FindByID indicates an expected call of FindByID.
-func (mr *MockUserRepositoryMockRecorder) FindByID(ctx, id any) *gomock.Call {
+// FindById indicates an expected call of FindById.
+func (mr *MockUserRepositoryMockRecorder) FindById(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindById", reflect.TypeOf((*MockUserRepository)(nil).FindByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindById", reflect.TypeOf((*MockUserRepository)(nil).FindById), ctx, id)
 }
 
 // FindByPhone mocks base method.

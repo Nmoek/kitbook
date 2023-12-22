@@ -18,6 +18,7 @@ type InteractiveDao interface {
 	GetCollectionItem(ctx context.Context, biz string, bizId int64, userId int64) (UserCollectInfo, error)
 	Get(ctx context.Context, biz string, bizId int64) (Interactive, error)
 	BatchIncreaseReadCnt(ctx context.Context, bizs []string, bizIds []int64) error
+	GetByIds(ctx context.Context, biz string, bizIds []int64) ([]Interactive, error)
 }
 
 type GORMInteractiveDao struct {
@@ -310,6 +311,22 @@ func (g *GORMInteractiveDao) Get(ctx context.Context, biz string, bizId int64) (
 	var intr Interactive
 	err := g.db.WithContext(ctx).Where("biz_id = ? AND biz = ?", bizId, biz).First(&intr).Error
 	return intr, err
+}
+
+// @func: GetByIds
+// @date: 2023-12-29 05:07:09
+// @brief: 热榜查询-互动数据点赞数-批量查询
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param biz
+// @param bizIds
+// @return []Interactive
+// @return error
+func (g *GORMInteractiveDao) GetByIds(ctx context.Context, biz string, bizIds []int64) ([]Interactive, error) {
+	var intrs []Interactive
+	err := g.db.WithContext(ctx).Where("biz = ? AND biz_id IN ?", biz, bizIds).First(&intrs).Error
+	return intrs, err
 }
 
 // Interactive
