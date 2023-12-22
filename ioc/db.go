@@ -8,6 +8,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
+	"gorm.io/plugin/opentelemetry/tracing"
 	"gorm.io/plugin/prometheus"
 	"kitbook/internal/repository/dao"
 	"kitbook/pkg/gormx"
@@ -55,6 +56,7 @@ func InitDB(l logger.Logger) *gorm.DB {
 		panic(err)
 	}
 
+	/*prometheus 初始化*/
 	cb := gormx.NewCallbacks(prometheus2.SummaryOpts{
 		Namespace: "kewin",
 		Subsystem: "kitbook",
@@ -74,6 +76,12 @@ func InitDB(l logger.Logger) *gorm.DB {
 	})
 
 	err = db.Use(cb)
+	if err != nil {
+		panic(err)
+	}
+
+	/*OPTL接入gorm*/
+	err = db.Use(tracing.NewPlugin(tracing.WithoutMetrics()))
 	if err != nil {
 		panic(err)
 	}

@@ -1,15 +1,26 @@
 package main
 
 import (
+	"context"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
+	"kitbook/ioc"
 	"net/http"
+	"time"
 )
 
 func main() {
 	// 初始化配置模块
 	initViper()
 	initPrometheus()
+	tpCancel := ioc.InitOTEL()
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		// 控制关闭超时
+		tpCancel(ctx)
+
+	}()
 
 	// 初始化Web服务
 	app := InitWebServer()
