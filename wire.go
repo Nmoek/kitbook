@@ -38,6 +38,7 @@ func InitWebServer() *App {
 		ioc.InitSyncProducer,
 		ioc.InitJobs,
 		ioc.InitRankingJob,
+		ioc.InitRlockClient,
 		//ioc.InitFreeCache,
 
 		interactiveSvcSet,

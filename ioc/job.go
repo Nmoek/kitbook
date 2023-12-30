@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	rlock "github.com/gotomicro/redis-lock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron/v3"
 	"kitbook/internal/job"
@@ -9,8 +10,8 @@ import (
 	"time"
 )
 
-func InitRankingJob(svc service.RankingService) *job.RankingJob {
-	return job.NewRankingJob(svc, time.Second*30)
+func InitRankingJob(svc service.RankingService, client *rlock.Client, l logger.Logger) *job.RankingJob {
+	return job.NewRankingJob(svc, time.Second*30, client, l)
 }
 
 func InitJobs(l logger.Logger, ranking_job *job.RankingJob) *cron.Cron {
