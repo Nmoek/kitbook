@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/liyue201/gostl/ds/priorityqueue"
 	"kitbook/internal/domain"
+	"kitbook/internal/repository"
 	"math"
 	"time"
 )
@@ -15,6 +16,8 @@ type RankingService interface {
 type BatchRankingService struct {
 	intrSvc InteractiveService
 	artSvc  ArticleService
+
+	repo repository.RankingRepository
 
 	batchSize int //一批查询出多少条数据
 	// 分数生成函数
@@ -43,14 +46,14 @@ func NewBatchRankingService(intrSvc InteractiveService, artSvc ArticleService) R
 // @param ctx
 // @return error
 func (b *BatchRankingService) TopN(ctx context.Context) error {
-	_, err := b.topN(ctx)
+	arts, err := b.topN(ctx)
 	if err != nil {
 		return err
 	}
 
 	//最终放入缓存中
 	//拆分两个函数, 目的：先将热点算法本身测试正确，然后再连带缓存放入一起进行测试
-	return nil
+	return b.repo.ReplaceTopN(ctx, arts)
 }
 
 // @func: topN

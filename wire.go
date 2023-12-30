@@ -21,6 +21,12 @@ var interactiveSvcSet = wire.NewSet(
 	service.NewArticleInteractiveService,
 )
 
+var rankingSvcSet = wire.NewSet(
+	cache.NewRedisRankingCache,
+	repository.NewCacheRankingRepository,
+	service.NewBatchRankingService,
+)
+
 func InitWebServer() *App {
 
 	wire.Build(
@@ -30,9 +36,12 @@ func InitWebServer() *App {
 		ioc.InitLogger,
 		ioc.InitSaramaClient,
 		ioc.InitSyncProducer,
+		ioc.InitJobs,
+		ioc.InitRankingJob,
 		//ioc.InitFreeCache,
 
 		interactiveSvcSet,
+		rankingSvcSet,
 
 		article.NewSaramaSyncProducer,
 		article.NewInteractiveReadEventConsumer,

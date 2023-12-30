@@ -12,7 +12,7 @@ import (
 
 // @func: TestBatchRankingService_topN
 // @date: 2023-12-27 00:31:04
-// @brief: 测试热点算法
+// @brief: 测试热榜功能-核心算法实现
 // @author: Kewin Li
 // @param t
 func TestBatchRankingService_topN(t *testing.T) {
