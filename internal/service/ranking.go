@@ -11,6 +11,7 @@ import (
 
 type RankingService interface {
 	TopN(ctx context.Context) error
+	GetTopN(ctx context.Context) ([]domain.Article, error)
 }
 
 type BatchRankingService struct {
@@ -29,8 +30,8 @@ func NewBatchRankingService(intrSvc InteractiveService, artSvc ArticleService) R
 	return &BatchRankingService{
 		intrSvc:   intrSvc,
 		artSvc:    artSvc,
-		batchSize: 30,
-		n:         100,
+		batchSize: 100, // 每一批查100条记录
+		n:         100, // 维护score最高的前100条记录
 		scoreFunc: func(likeCnt int64, utime time.Time) float64 {
 			duration := time.Since(utime).Seconds()
 			return float64(likeCnt-1) / math.Pow(duration+1, 1.5)
@@ -158,4 +159,15 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 
 	return res, nil
 
+}
+
+// @func: GetTopN
+// @date: 2023-12-30 21:45:39
+// @brief: 热榜服务-查询热榜数据
+// @author: Kewin Li
+// @receiver b
+// @param ctx
+// @return error
+func (b *BatchRankingService) GetTopN(ctx context.Context) ([]domain.Article, error) {
+	return b.repo.GetTopN(ctx)
 }

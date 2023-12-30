@@ -10,6 +10,7 @@ import (
 
 type RankingCache interface {
 	Set(ctx context.Context, arts []domain.Article) error
+	Get(ctx context.Context) ([]domain.Article, error)
 }
 
 type RedisRankingCache struct {
@@ -46,4 +47,24 @@ func (r *RedisRankingCache) Set(ctx context.Context, arts []domain.Article) erro
 	}
 
 	return r.client.Set(ctx, r.key, val, r.expiration).Err()
+}
+
+// @func: Get
+// @date: 2023-12-30 21:48:23
+// @brief:热榜缓存-取出数据
+// @author: Kewin Li
+// @receiver r
+// @param ctx
+// @return []domain.Article
+// @return error
+func (r *RedisRankingCache) Get(ctx context.Context) ([]domain.Article, error) {
+	var arts []domain.Article
+
+	val, err := r.client.Get(ctx, r.key).Bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(val, &arts)
+	return arts, err
 }
