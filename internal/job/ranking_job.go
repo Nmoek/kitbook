@@ -55,6 +55,7 @@ func (r *RankingJob) Run() error {
 		if err != nil {
 			//TODO: 日志埋点，分布式锁加锁失败
 			r.l.WARN("分布式锁加锁失败", logger.Error(err))
+
 			// 不返回报错，信任其他web结点会进行处理
 			r.localLock.Unlock()
 			return nil

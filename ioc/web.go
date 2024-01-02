@@ -41,11 +41,12 @@ func InitGinMiddlewares(client redis.Cmdable,
 	}
 
 	return []gin.HandlerFunc{
+		/*跨域请求设置*/
 		cors.New(cors.Config{
 			AllowCredentials: true, //是否允许cookie
 			AllowHeaders:     []string{"Content-Type", "authorization"},
 			ExposeHeaders:    []string{"x-jwt-token"}, //允许外部访问后端的头部字段
-			//AllowOrigins:     []string{"http://localhost:3000"},  //单独枚举指定
+			//AllowOrigins:     []string{"http://localhost:3000"},  //单独枚举指定外部的跨域url
 			AllowOriginFunc: func(origin string) bool {
 				// 允许本机调试
 				if strings.Contains(origin, "localhost") {
@@ -56,18 +57,22 @@ func InitGinMiddlewares(client redis.Cmdable,
 			},
 			MaxAge: 12 * time.Hour,
 		}),
-		pb.BuildResponseTIme(),
+		/*监测系统请求响应的时长*/
+		pb.BuildResponseTime(),
+		/*监测系统请求数*/
 		pb.BuildActiveRequest(),
+		/*普通jwt校验*/
 		//middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin(),
 
-		//限流器中间件 1000 QPS/s
+		/*限流器中间件 1000 QPS/s*/
 		//ratelimit.NewMiddlewareBuilder(limiter).Build(),
-		// 传入要实现的日志打印
+		/*zap日志中间件嵌入 系统请求与响应都自动打印*/
 		//middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
 		//
 		//	l.DEBUG("sys_log", logger.Field{Key: "req", Val: al})
 		//
 		//}).AllowReqBody().AllowRespBody().Build(),
+		/*长短jwt校验*/
 		middlewares.NewLoginJWTMiddlewareBuilder(jwtHdl).CheckLogin_LongShortToken(),
 	}
 

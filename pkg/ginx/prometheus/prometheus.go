@@ -25,7 +25,7 @@ func NewBuilder(namespace string, subsystem string, name string, instanceId stri
 	}
 }
 
-func (b *Builder) BuildResponseTIme() gin.HandlerFunc {
+func (b *Builder) BuildResponseTime() gin.HandlerFunc {
 	labels := []string{"method", "pattern", "status"}
 	vector := prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace: b.Namespace,
