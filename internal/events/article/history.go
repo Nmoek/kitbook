@@ -1,3 +1,5 @@
+//go:build k8s
+
 // Package article
 // @Description: 浏览历史记录消费业务
 package article
@@ -5,6 +7,7 @@ package article
 import (
 	"context"
 	"github.com/IBM/sarama"
+	repository2 "kitbook/interactive/repository"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 	"kitbook/pkg/logger"
@@ -18,10 +21,10 @@ type HistoryRecordConsumer struct {
 	l      logger.Logger
 }
 
-func NewHistoryRecordConsumer(repo repository.InteractiveRepository,
+func NewHistoryRecordConsumer(repo repository2.InteractiveRepository,
 	client sarama.Client,
-	l logger.Logger) *InteractiveReadEventConsumer {
-	return &InteractiveReadEventConsumer{
+	l logger.Logger) *HistoryRecordConsumer {
+	return &HistoryRecordConsumer{
 		repo:   repo,
 		client: client,
 		l:      l,

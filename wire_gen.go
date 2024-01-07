@@ -8,6 +8,11 @@ package main
 
 import (
 	"github.com/google/wire"
+	"kitbook/interactive/events"
+	repository2 "kitbook/interactive/repository"
+	cache2 "kitbook/interactive/repository/cache"
+	dao2 "kitbook/interactive/repository/dao"
+	service2 "kitbook/interactive/service"
 	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
@@ -45,13 +50,13 @@ func InitWebServer() *App {
 	syncProducer := ioc.InitSyncProducer(client)
 	producer := article.NewSaramaSyncProducer(syncProducer)
 	articleService := service.NewNormalArticleService(articleRepository, producer, logger)
-	interactiveDao := dao.NewGORMInteractiveDao(db)
-	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
-	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
-	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
+	interactiveDao := dao2.NewGORMInteractiveDao(db)
+	interactiveCache := cache2.NewRedisInteractiveCache(cmdable)
+	interactiveRepository := repository2.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
+	interactiveService := service2.NewArticleInteractiveService(interactiveRepository, logger)
 	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
-	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
+	interactiveReadEventConsumer := events.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
 	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
 	rankingService := service.NewBatchRankingService(interactiveService, articleService)
 	rlockClient := ioc.InitRlockClient(cmdable)
@@ -67,6 +72,6 @@ func InitWebServer() *App {
 
 // wire.go:
 
-var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDao, cache.NewRedisInteractiveCache, repository.NewArticleInteractiveRepository, service.NewArticleInteractiveService)
+var interactiveSvcSet = wire.NewSet(dao2.NewGORMInteractiveDao, cache2.NewRedisInteractiveCache, repository2.NewArticleInteractiveRepository, service2.NewArticleInteractiveService)
 
 var rankingSvcSet = wire.NewSet(cache.NewRedisRankingCache, repository.NewCacheRankingRepository, service.NewBatchRankingService)

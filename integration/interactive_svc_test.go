@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 	"kitbook/integration/startup"
-	"kitbook/internal/domain"
-	"kitbook/internal/repository/dao"
-	"kitbook/internal/service"
+	"kitbook/interactive/domain"
+	"kitbook/interactive/repository/dao"
+	"kitbook/interactive/service"
 	"testing"
 	"time"
 )

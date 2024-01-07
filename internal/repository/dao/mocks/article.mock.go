@@ -101,10 +101,10 @@ func (mr *MockArticleDaoMockRecorder) Insert(ctx, art any) *gomock.Call {
 }
 
 // ListPub mocks base method.
-func (m *MockArticleDao) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]dao.Article, error) {
+func (m *MockArticleDao) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]dao.PublishedArticle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPub", ctx, start, offset, limit)
-	ret0, _ := ret[0].([]dao.Article)
+	ret0, _ := ret[0].([]dao.PublishedArticle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

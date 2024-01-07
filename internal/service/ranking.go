@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/liyue201/gostl/ds/priorityqueue"
+	"kitbook/interactive/service"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 	"math"
@@ -15,7 +16,7 @@ type RankingService interface {
 }
 
 type BatchRankingService struct {
-	intrSvc InteractiveService
+	intrSvc service.InteractiveService
 	artSvc  ArticleService
 
 	repo repository.RankingRepository
@@ -26,7 +27,7 @@ type BatchRankingService struct {
 	n         int //总共需要多少条数据
 }
 
-func NewBatchRankingService(intrSvc InteractiveService, artSvc ArticleService) RankingService {
+func NewBatchRankingService(intrSvc service.InteractiveService, artSvc ArticleService) RankingService {
 	return &BatchRankingService{
 		intrSvc:   intrSvc,
 		artSvc:    artSvc,

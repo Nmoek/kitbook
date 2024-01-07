@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const ErrKeyNotExist = redis.Nil
+
 var (
 	//go:embed lua/get_firstPage.lua
 	luaGetFirstPage string

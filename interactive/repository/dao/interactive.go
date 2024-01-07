@@ -2,13 +2,10 @@ package dao
 
 import (
 	"context"
-	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
 )
-
-var ErrRepeatCancel = errors.New("重复取消点赞/收藏")
 
 type InteractiveDao interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error

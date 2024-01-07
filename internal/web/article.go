@@ -5,6 +5,8 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
+	domain2 "kitbook/interactive/domain"
+	service2 "kitbook/interactive/service"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
 	ijwt "kitbook/internal/web/jwt"
@@ -16,14 +18,14 @@ import (
 
 type ArticleHandler struct {
 	svc            service.ArticleService
-	interactiveSvc service.InteractiveService
+	interactiveSvc service2.InteractiveService
 
 	l   logger.Logger
 	biz string
 }
 
 func NewArticleHandler(svc service.ArticleService,
-	interactiveSvc service.InteractiveService,
+	interactiveSvc service2.InteractiveService,
 	l logger.Logger) *ArticleHandler {
 	return &ArticleHandler{
 		svc:            svc,
@@ -443,7 +445,7 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	var (
 		eg   errgroup.Group
 		art  domain.Article
-		intr domain.Interactive
+		intr domain2.Interactive
 	)
 
 	idStr := ctx.Param("id")

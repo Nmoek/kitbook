@@ -4,6 +4,11 @@ package main
 
 import (
 	"github.com/google/wire"
+	"kitbook/interactive/events"
+	repository2 "kitbook/interactive/repository"
+	cache2 "kitbook/interactive/repository/cache"
+	dao2 "kitbook/interactive/repository/dao"
+	service2 "kitbook/interactive/service"
 	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
@@ -15,10 +20,10 @@ import (
 )
 
 var interactiveSvcSet = wire.NewSet(
-	dao.NewGORMInteractiveDao,
-	cache.NewRedisInteractiveCache,
-	repository.NewArticleInteractiveRepository,
-	service.NewArticleInteractiveService,
+	dao2.NewGORMInteractiveDao,
+	cache2.NewRedisInteractiveCache,
+	repository2.NewArticleInteractiveRepository,
+	service2.NewArticleInteractiveService,
 )
 
 var rankingSvcSet = wire.NewSet(
@@ -45,7 +50,7 @@ func InitWebServer() *App {
 		rankingSvcSet,
 
 		article.NewSaramaSyncProducer,
-		article.NewInteractiveReadEventConsumer,
+		events.NewInteractiveReadEventConsumer,
 		ioc.InitConsumers,
 
 		dao.NewGormUserDao,

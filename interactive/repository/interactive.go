@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"kitbook/internal/domain"
-	"kitbook/internal/repository/cache"
-	"kitbook/internal/repository/dao"
+	"kitbook/interactive/domain"
+	"kitbook/interactive/repository/cache"
+	"kitbook/interactive/repository/dao"
 	"kitbook/pkg/logger"
 )
 

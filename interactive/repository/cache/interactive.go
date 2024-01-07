@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"kitbook/internal/domain"
+	"kitbook/interactive/domain"
 	"strconv"
 	"time"
 )

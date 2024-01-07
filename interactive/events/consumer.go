@@ -1,12 +1,16 @@
-package article
+package events
 
 import (
 	"context"
 	"github.com/IBM/sarama"
-	"kitbook/internal/repository"
+	"kitbook/interactive/repository"
 	"kitbook/pkg/logger"
 	"kitbook/pkg/saramax"
 	"time"
+)
+
+const (
+	TopicReadEvent = "article_read"
 )
 
 type InteractiveReadEventConsumer struct {
@@ -107,4 +111,13 @@ func (i *InteractiveReadEventConsumer) BatchConsume(msgs []*sarama.ConsumerMessa
 
 	return i.repo.BatchIncreaseReadCnt(ctx, bizs, bizIds)
 
+}
+
+// ReadEvent
+// @Description: 帖子模块-读事件
+type ReadEvent struct {
+	// 哪一篇文章
+	ArtId int64
+	// 谁查询的
+	UserId int64
 }

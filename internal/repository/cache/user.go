@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-const ErrKeyNotExist = redis.Nil
-
 type UserCache interface {
 	Get(ctx context.Context, id int64) (dao.User, error)
 	Set(ctx context.Context, user dao.User) error

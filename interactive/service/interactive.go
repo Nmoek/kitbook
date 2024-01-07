@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"golang.org/x/sync/errgroup"
-	"kitbook/internal/domain"
-	"kitbook/internal/repository"
+	"kitbook/interactive/domain"
+	"kitbook/interactive/repository"
 	"kitbook/pkg/logger"
 )
 

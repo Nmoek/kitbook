@@ -5,6 +5,7 @@ package startup
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	dao2 "kitbook/interactive/repository/dao"
 	"kitbook/internal/repository/dao"
 )
 
@@ -16,6 +17,12 @@ func InitDB() *gorm.DB {
 	}
 
 	err = dao.InitTables(db)
+	if err != nil {
+		panic(err)
+	}
+
+	// 模块化拆分
+	err = dao2.InitTables(db)
 	if err != nil {
 		panic(err)
 	}

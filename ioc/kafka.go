@@ -3,8 +3,8 @@ package ioc
 import (
 	"github.com/IBM/sarama"
 	"github.com/spf13/viper"
+	events2 "kitbook/interactive/events"
 	"kitbook/internal/events"
-	"kitbook/internal/events/article"
 )
 
 func InitSaramaClient() sarama.Client {
@@ -40,7 +40,7 @@ func InitSyncProducer(client sarama.Client) sarama.SyncProducer {
 }
 
 // 注意： wire没有办法找到所有同类实现
-func InitConsumers(c *article.InteractiveReadEventConsumer) []events.Consumer {
+func InitConsumers(c *events2.InteractiveReadEventConsumer) []events.Consumer {
 
 	return []events.Consumer{c}
 

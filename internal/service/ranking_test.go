@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	domain2 "kitbook/interactive/domain"
+	"kitbook/interactive/service"
 	"kitbook/internal/domain"
 	svcmocks "kitbook/internal/service/mocks"
 	"testing"
@@ -22,14 +24,14 @@ func TestBatchRankingService_topN(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		mock func(ctrl *gomock.Controller) (InteractiveService, ArticleService)
+		mock func(ctrl *gomock.Controller) (service.InteractiveService, ArticleService)
 
 		wantErr  error
 		wantArts []domain.Article
 	}{
 		{
 			name: "成功获取",
-			mock: func(ctrl *gomock.Controller) (InteractiveService, ArticleService) {
+			mock: func(ctrl *gomock.Controller) (service.InteractiveService, ArticleService) {
 				artSvc := svcmocks.NewMockArticleService(ctrl)
 				intrSvc := svcmocks.NewMockInteractiveService(ctrl)
 				/*查询帖子内容*/
@@ -61,13 +63,13 @@ func TestBatchRankingService_topN(t *testing.T) {
 
 				/*查询互动数据*/
 				// 获取第一批数据
-				intrSvc.EXPECT().GetByIds(gomock.Any(), "article", []int64{1, 2}).Return(map[int64]domain.Interactive{
+				intrSvc.EXPECT().GetByIds(gomock.Any(), "article", []int64{1, 2}).Return(map[int64]domain2.Interactive{
 					1: {LikeCnt: 1},
 					2: {LikeCnt: 2},
 				}, nil)
 
 				// 获取第二批数据
-				intrSvc.EXPECT().GetByIds(gomock.Any(), "article", []int64{3, 4}).Return(map[int64]domain.Interactive{
+				intrSvc.EXPECT().GetByIds(gomock.Any(), "article", []int64{3, 4}).Return(map[int64]domain2.Interactive{
 					3: {LikeCnt: 3},
 					4: {LikeCnt: 4},
 				}, nil)

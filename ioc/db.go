@@ -10,6 +10,7 @@ import (
 	glogger "gorm.io/gorm/logger"
 	"gorm.io/plugin/opentelemetry/tracing"
 	"gorm.io/plugin/prometheus"
+	dao2 "kitbook/interactive/repository/dao"
 	"kitbook/internal/repository/dao"
 	"kitbook/pkg/gormx"
 	"kitbook/pkg/logger"
@@ -88,6 +89,12 @@ func InitDB(l logger.Logger) *gorm.DB {
 
 	// 初始化表结构(慎该写法)
 	err = dao.InitTables(db)
+	if err != nil {
+		panic(err)
+	}
+
+	// 模块化拆分
+	err = dao2.InitTables(db)
 	if err != nil {
 		panic(err)
 	}
