@@ -5,6 +5,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
+	"kitbook/pkg/logger"
 )
 
 type InteractiveService interface {
@@ -19,11 +20,14 @@ type InteractiveService interface {
 
 type ArticleInteractiveService struct {
 	repo repository.InteractiveRepository
+
+	l logger.Logger
 }
 
-func NewArticleInteractiveService(repo repository.InteractiveRepository) InteractiveService {
+func NewArticleInteractiveService(repo repository.InteractiveRepository, l logger.Logger) InteractiveService {
 	return &ArticleInteractiveService{
 		repo: repo,
+		l:    l,
 	}
 }
 
@@ -73,7 +77,6 @@ func (a *ArticleInteractiveService) CancelLike(ctx context.Context, biz string, 
 // @receiver a
 // @return unc
 func (a *ArticleInteractiveService) Collect(ctx context.Context, biz string, bizId int64, collectId int64, userId int64) error {
-
 	return a.repo.IncreaseCollectItem(ctx, biz, bizId, collectId, userId)
 }
 
@@ -112,7 +115,11 @@ func (a *ArticleInteractiveService) Get(ctx context.Context, biz string, bizId i
 		var err2 error
 		intr.Liked, err2 = a.repo.Liked(ctx, biz, bizId, userId)
 		if err2 != nil {
-			//TODO: 日志埋点
+			a.l.ERROR("查询用户点赞信息失败",
+				logger.Error(err),
+				logger.Field{"biz", biz},
+				logger.Int[int64]("biz_id", bizId),
+				logger.Int[int64]("user_id", userId))
 			return err2
 		}
 		return nil
@@ -123,7 +130,11 @@ func (a *ArticleInteractiveService) Get(ctx context.Context, biz string, bizId i
 		var err2 error
 		intr.Collected, err2 = a.repo.Collectd(ctx, biz, bizId, userId)
 		if err2 != nil {
-			//TODO: 日志埋点
+			a.l.ERROR("查询用户收藏信息失败",
+				logger.Error(err),
+				logger.Field{"biz", biz},
+				logger.Int[int64]("biz_id", bizId),
+				logger.Int[int64]("user_id", userId))
 			return err2
 		}
 

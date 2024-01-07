@@ -32,7 +32,7 @@ func NewInteractiveReadEventConsumer(repo repository.InteractiveRepository,
 // @author: Kewin Li
 // @receiver i
 // @return error
-func (i *InteractiveReadEventConsumer) StartV1() error {
+func (i *InteractiveReadEventConsumer) Start() error {
 	cg, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func (i *InteractiveReadEventConsumer) Consume(msg *sarama.ConsumerMessage, even
 	return i.repo.IncreaseReadCnt(ctx, "article", event.ArtId)
 }
 
-func (i *InteractiveReadEventConsumer) Start() error {
+func (i *InteractiveReadEventConsumer) StartV2() error {
 	cg, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
 	if err != nil {
 		return err

@@ -2,11 +2,15 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository/cache"
 	"kitbook/internal/repository/dao"
 	"kitbook/pkg/logger"
 )
+
+var ErrRepeatCancel = dao.ErrRepeatCancel
+var ErrOperationInvalid = errors.New("用户非法操作")
 
 type InteractiveRepository interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error
@@ -52,7 +56,8 @@ func (a *ArticleInteractiveRepository) IncreaseReadCnt(ctx context.Context, biz 
 
 	// 更新缓存
 	// 部分失败问题
-	return a.cache.IncreaseReadCntIfPresent(ctx, biz, bizId)
+	err = a.cache.IncreaseReadCntIfPresent(ctx, biz, bizId)
+	return err
 }
 
 // @func: IncreaseLikeCnt
@@ -90,6 +95,9 @@ func (a *ArticleInteractiveRepository) DecreaseLikeCnt(ctx context.Context, biz 
 	// 1. 数据库
 	err := a.dao.DelLikeInfo(ctx, biz, bizId, userId)
 	if err != nil {
+		if err == ErrRepeatCancel {
+			err = ErrOperationInvalid
+		}
 		return err
 	}
 
@@ -132,6 +140,9 @@ func (a *ArticleInteractiveRepository) DecreaseCollectItem(ctx context.Context, 
 	// 1. 修改收藏表、互动表
 	err := a.dao.DelCollectionItem(ctx, biz, bizId, collectId, userId)
 	if err != nil {
+		if err == ErrRepeatCancel {
+			err = ErrOperationInvalid
+		}
 		return err
 	}
 
@@ -156,7 +167,11 @@ func (a *ArticleInteractiveRepository) Get(ctx context.Context, biz string, bizI
 	if err == nil {
 		return intrDomain, nil
 	}
-	//TODO: 日志埋点，缓存查询失败错误信息
+
+	a.l.WARN("缓存查询失败",
+		logger.Error(err),
+		logger.Field{"biz", biz},
+		logger.Field{"biz_id", bizId})
 
 	// 2. 没缓存，查库 查互动信息
 	intrDao, err := a.dao.Get(ctx, biz, bizId)
@@ -166,10 +181,17 @@ func (a *ArticleInteractiveRepository) Get(ctx context.Context, biz string, bizI
 
 	// 3. 缓存回写
 	intrDomain = a.ConvertsDomainInteractive(&intrDao)
-	err = a.cache.Set(ctx, biz, bizId, intrDomain)
-	if err != nil {
-		//TODO: 日志埋点，不一定返回错误
-	}
+
+	go func() {
+		err2 := a.cache.Set(ctx, biz, bizId, intrDomain)
+		if err2 != nil {
+			//TODO: 日志埋点，不一定返回错误
+			a.l.WARN("缓存回写失败",
+				logger.Error(err2),
+				logger.Field{"biz", biz},
+				logger.Field{"biz_id", bizId})
+		}
+	}()
 
 	return intrDomain, nil
 
