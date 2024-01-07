@@ -99,5 +99,5 @@ func NewInteractiveService() service.InteractiveService {
 		thirdPartySet,
 		interactiveSvcSet,
 	)
-	return service.NewArticleInteractiveService(nil)
+	return service.NewArticleInteractiveService(nil, nil)
 }

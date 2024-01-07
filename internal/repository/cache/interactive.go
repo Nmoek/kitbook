@@ -13,8 +13,6 @@ import (
 var (
 	//go:embed lua/incr_cnt.lua
 	luaIncrCnt string
-	//go:embed lua/decr_cnt.lua
-	luaDecrCnt string
 )
 
 const (
@@ -82,7 +80,7 @@ func (r *RedisInteractiveCache) IncreaseLikeCntIfPresent(ctx context.Context, bi
 // @param userId
 // @return error
 func (r *RedisInteractiveCache) DecreaseLikeCntIfPresent(ctx context.Context, biz string, bizId int64) error {
-	return r.client.Eval(ctx, luaDecrCnt, []string{r.createKey(biz, bizId)}, fieldLikeCnt, 1).Err()
+	return r.client.Eval(ctx, luaIncrCnt, []string{r.createKey(biz, bizId)}, fieldLikeCnt, -1).Err()
 
 }
 
@@ -111,7 +109,7 @@ func (r *RedisInteractiveCache) IncrCollectionCntIfPresent(ctx context.Context, 
 // @param userId
 // @return error
 func (r *RedisInteractiveCache) DecrCollectionCntIfPresent(ctx context.Context, biz string, bizId int64) error {
-	return r.client.Eval(ctx, luaDecrCnt, []string{r.createKey(biz, bizId)}, fieldCollectCnt, 1).Err()
+	return r.client.Eval(ctx, luaIncrCnt, []string{r.createKey(biz, bizId)}, fieldCollectCnt, -1).Err()
 
 }
 
@@ -151,6 +149,7 @@ func (r *RedisInteractiveCache) Get(ctx context.Context, biz string, bizId int64
 func (r *RedisInteractiveCache) Set(ctx context.Context, biz string, bizId int64, intr domain.Interactive) error {
 	key := r.createKey(biz, bizId)
 	err := r.client.HSet(ctx, key,
+		bizId, intr.BizId,
 		fieldReadCnt, intr.ReadCnt,
 		fieldLikeCnt, intr.LikeCnt,
 		fieldCollectCnt, intr.CollectCnt).Err()
@@ -183,11 +182,13 @@ func (r *RedisInteractiveCache) createKey(biz string, bizId int64) string {
 // @param res
 // @return domain.Interactive
 func (r *RedisInteractiveCache) convertsDomainIntrFromCache(res map[string]string) (domain.Interactive, error) {
+	bizId, err := strconv.ParseInt(res["biz_id"], 10, 64)
 	readCnt, err := strconv.ParseInt(res[fieldReadCnt], 10, 64)
 	likeCnt, err := strconv.ParseInt(res[fieldLikeCnt], 10, 64)
 	collectCnt, err := strconv.ParseInt(res[fieldCollectCnt], 10, 64)
 
 	return domain.Interactive{
+		BizId:      bizId,
 		ReadCnt:    readCnt,
 		LikeCnt:    likeCnt,
 		CollectCnt: collectCnt,

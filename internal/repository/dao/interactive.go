@@ -2,10 +2,13 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
 )
+
+var ErrRepeatCancel = errors.New("重复取消点赞/收藏")
 
 type InteractiveDao interface {
 	IncreaseReadCnt(ctx context.Context, biz string, bizId int64) error
@@ -115,6 +118,7 @@ func (g *GORMInteractiveDao) AddLikeInfo(ctx context.Context, biz string, bizId 
 
 		if err != nil {
 			// TODO: 日志埋点
+			return err
 		}
 
 		// 2. 互动表，点赞数+1
@@ -148,21 +152,28 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 	now := time.Now().UnixMilli()
 
 	// 1. 用户点赞表 软删除
+	// 注意：防止受到攻击, 需要当前用户点赞状态有效才能取消点赞
 	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := tx.Model(&UserLikeInfo{}).
-			Where("user_id = ? AND biz_id = ? AND biz = ?", userId, bizId, biz).
+		res := tx.Model(&UserLikeInfo{}).
+			Where("user_id = ? AND biz_id = ? AND biz = ? AND status = 1", userId, bizId, biz).
 			Updates(map[string]any{
 				"status": 0, //当前点赞无效
 				"utime":  now,
-			}).Error
-
+			})
+		err := res.Error
 		if err != nil {
 			// TODO: 日志埋点
+			return err
+		}
+		// 更新没有成功也需要返回错误
+		if res.RowsAffected == 0 {
+			return ErrRepeatCancel
 		}
 
 		// 2. 互动表，点赞数-1
+		// 点赞数-1时要注意不要越界为负数
 		return tx.Model(&Interactive{}).
-			Where("biz_id = ? AND biz = ?", bizId, biz).
+			Where("biz_id = ? AND biz = ? AND like_cnt > 0", bizId, biz).
 			Updates(map[string]any{
 				"like_cnt": gorm.Expr("`like_cnt` - 1"),
 				"utime":    now,
@@ -184,7 +195,7 @@ func (g *GORMInteractiveDao) DelLikeInfo(ctx context.Context, biz string, bizId 
 func (g *GORMInteractiveDao) GetLikeInfo(ctx context.Context, biz string, bizId int64, userId int64) (UserLikeInfo, error) {
 	var info UserLikeInfo
 	err := g.db.WithContext(ctx).
-		Where("biz_id = ? AND biz = ? AND user_id = ?", biz, bizId, userId).
+		Where("user_id = ? AND biz_id = ? AND biz = ? AND status = 1", userId, bizId, biz).
 		First(&info).Error
 	return info, err
 }
@@ -258,19 +269,24 @@ func (g *GORMInteractiveDao) DelCollectionItem(ctx context.Context, biz string, 
 
 	// 1. 软删除 收藏信息
 	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := tx.Model(&UserCollectInfo{}).
-			Where("user_id = ? AND biz_id = ? AND biz = ?", userId, bizId, biz).
+		res := tx.Model(&UserCollectInfo{}).
+			Where("user_id = ? AND biz_id = ? AND biz = ? AND status = 1", userId, bizId, biz).
 			Updates(map[string]any{
 				"status": 0,
 				"utime":  now,
-			}).Error
-
+			})
+		err := res.Error
 		if err != nil {
 			return err
 		}
+
+		if res.RowsAffected == 0 {
+			return ErrRepeatCancel
+		}
+
 		// 2. 互动表 收藏数-1
 		return tx.Model(&Interactive{}).
-			Where("user_id = ? AND biz_id = ? AND biz = ? AND status = ? ", userId, bizId, biz, 1). //注意: status=1 才是有效
+			Where("biz_id = ? AND biz = ? AND collect_cnt > 0", bizId, biz).
 			Updates(map[string]any{
 				"collect_cnt": gorm.Expr("`collect_cnt` - 1"),
 				"utime":       now,
@@ -292,7 +308,7 @@ func (g *GORMInteractiveDao) DelCollectionItem(ctx context.Context, biz string, 
 func (g *GORMInteractiveDao) GetCollectionItem(ctx context.Context, biz string, bizId int64, userId int64) (UserCollectInfo, error) {
 	var item UserCollectInfo
 	err := g.db.WithContext(ctx).
-		Where("biz_id = ? AND biz = ? AND user_id = ? AND status = ?", bizId, biz, userId, 1). //注意: status=1 才是有效
+		Where("user_id = ? AND biz_id = ? AND biz = ? AND status = 1", userId, bizId, biz). //注意: status=1 才是有效
 		First(&item).Error
 	return item, err
 }
@@ -325,7 +341,7 @@ func (g *GORMInteractiveDao) Get(ctx context.Context, biz string, bizId int64) (
 // @return error
 func (g *GORMInteractiveDao) GetByIds(ctx context.Context, biz string, bizIds []int64) ([]Interactive, error) {
 	var intrs []Interactive
-	err := g.db.WithContext(ctx).Where("biz = ? AND biz_id IN ?", biz, bizIds).First(&intrs).Error
+	err := g.db.WithContext(ctx).Where("biz_id IN ? ANd biz = ?", bizIds, biz).Find(&intrs).Error
 	return intrs, err
 }
 
@@ -334,9 +350,9 @@ func (g *GORMInteractiveDao) GetByIds(ctx context.Context, biz string, bizIds []
 type Interactive struct {
 	Id int64 `gorm:"primaryKey, autoIncrement"`
 
-	// 建立联合唯一索引<bizId, biz>
-	BizId int64  `gorm:"uniqueIndex:biz_type_id"`
-	Biz   string `gorm:"type:varchar(128);uniqueIndex:uid_biz_type_id"`
+	// 建立联合唯一索引<bizId, biz
+	BizId int64  `gorm:"uniqueIndex:intr_biz_type_id"`
+	Biz   string `gorm:"type:varchar(128);uniqueIndex:intr_biz_type_id"`
 
 	// 阅读数
 	ReadCnt int64

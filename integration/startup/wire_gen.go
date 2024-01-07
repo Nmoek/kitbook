@@ -49,7 +49,7 @@ func InitWebServer() *gin.Engine {
 	interactiveDao := dao.NewGORMInteractiveDao(db)
 	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
 	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
-	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
+	interactiveService := service.NewArticleInteractiveService(interactiveRepository, logger)
 	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
 	return engine
@@ -71,7 +71,7 @@ func NewArticleHandler(dao2 dao.ArticleDao) *web.ArticleHandler {
 	interactiveDao := dao.NewGORMInteractiveDao(db)
 	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
 	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
-	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
+	interactiveService := service.NewArticleInteractiveService(interactiveRepository, logger)
 	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
 	return articleHandler
 }
@@ -83,7 +83,7 @@ func NewInteractiveService() service.InteractiveService {
 	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
 	logger := InitLogger()
 	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
-	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
+	interactiveService := service.NewArticleInteractiveService(interactiveRepository, logger)
 	return interactiveService
 }
 

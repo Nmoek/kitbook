@@ -215,9 +215,8 @@ func (n *NormalArticleService) GetPubById(ctx context.Context, artId int64, user
 
 			if err2 != nil {
 				// TODO: 日志埋点，消息发送失败
-				n.l.ERROR("GetPubById",
+				n.l.ERROR("阅读数+1消息发送失败",
 					logger.Error(err2),
-					logger.String("阅读数+1消息发送失败"),
 					logger.Int[int64]("artId", artId),
 					logger.Int[int64]("userId", userId))
 			}
