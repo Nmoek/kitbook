@@ -1,0 +1,16 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: "gitee.com/Nmoek/kitbook/api/proto/gen"
+
+plugins:
+    # Go插件 protoc-gen-go
+  - plugin: buf.build/protocolbuffers/go:v1.31.0
+    out: api/proto/gen
+    opt: paths=source_relative
+
+    #  gRPC插件 protoc-gen-go-grpc
+  - plugin: buf.build/grpc/go
+    out: api/proto/gen
+    opt: paths=source_relative
