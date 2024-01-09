@@ -11,3 +11,7 @@ db:
 kafka:
   addr:
     - "localhost:9094"
+
+grpc:
+  server:
+    addr: ":8090"

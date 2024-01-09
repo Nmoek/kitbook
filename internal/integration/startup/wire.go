@@ -98,10 +98,10 @@ func NewArticleHandler(dao dao.ArticleDao) *web.ArticleHandler {
 	return &web.ArticleHandler{}
 }
 
-func NewInteractiveService() service2.InteractiveService {
-	wire.Build(
-		thirdPartySet,
-		interactiveSvcSet,
-	)
-	return service2.NewArticleInteractiveService(nil, nil)
-}
+//func NewInteractiveService() service2.InteractiveService {
+//	wire.Build(
+//		thirdPartySet,
+//		interactiveSvcSet,
+//	)
+//	return service2.NewArticleInteractiveService(nil, nil)
+//}
