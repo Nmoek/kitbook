@@ -5,24 +5,18 @@ package startup
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	dao2 "kitbook/interactive/repository/dao"
 	"kitbook/internal/repository/dao"
 )
 
 func InitDB() *gorm.DB {
 
-	db, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:13316)/kitbook?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
-
-	err = dao.InitTables(db)
+	db, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:13316)/kitbook"), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
 
 	// 模块化拆分
-	err = dao2.InitTables(db)
+	err = dao.InitTables(db)
 	if err != nil {
 		panic(err)
 	}

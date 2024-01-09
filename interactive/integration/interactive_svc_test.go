@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
-	"kitbook/integration/startup"
-	"kitbook/interactive/domain"
+	intrv1 "kitbook/api/proto/gen/intr/v1"
+	"kitbook/interactive/grpc"
+	"kitbook/interactive/integration/startup"
 	"kitbook/interactive/repository/dao"
-	"kitbook/interactive/service"
 	"testing"
 	"time"
 )
@@ -26,15 +26,15 @@ const (
 
 type InteractiveSvcSuite struct {
 	suite.Suite
-	db  *gorm.DB
-	rdb redis.Cmdable
-	svc service.InteractiveService
+	db     *gorm.DB
+	rdb    redis.Cmdable
+	server *grpc.InteractiveServiceServer
 }
 
 func (i *InteractiveSvcSuite) SetupSuite() {
 	i.db = startup.InitDB()
 	i.rdb = startup.InitRedis()
-	i.svc = startup.NewInteractiveService()
+	i.server = startup.NewInteractiveServer()
 
 }
 
@@ -88,7 +88,8 @@ func (i *InteractiveSvcSuite) TestIncreaseReadCnt() {
 		biz   string
 		bizId int64
 
-		wantErr error
+		wantResp *intrv1.IncreaseReadCntResponse
+		wantErr  error
 	}{
 		// 新建记录,数据库保存成功,无缓存
 		{
@@ -120,8 +121,9 @@ func (i *InteractiveSvcSuite) TestIncreaseReadCnt() {
 
 			},
 
-			biz:   "test",
-			bizId: 1,
+			biz:      "test",
+			bizId:    1,
+			wantResp: &intrv1.IncreaseReadCntResponse{},
 		},
 		// 修改记录, 数据库成功, 缓存成功
 		{
@@ -178,8 +180,9 @@ func (i *InteractiveSvcSuite) TestIncreaseReadCnt() {
 				assert.NoError(t, err)
 			},
 
-			biz:   "test",
-			bizId: 2,
+			biz:      "test",
+			bizId:    2,
+			wantResp: &intrv1.IncreaseReadCntResponse{},
 		},
 		// 修改记录, 数据库成功, 缓存无
 		{
@@ -229,8 +232,9 @@ func (i *InteractiveSvcSuite) TestIncreaseReadCnt() {
 
 			},
 
-			biz:   "test",
-			bizId: 3,
+			biz:      "test",
+			bizId:    3,
+			wantResp: &intrv1.IncreaseReadCntResponse{},
 		},
 	}
 
@@ -240,9 +244,11 @@ func (i *InteractiveSvcSuite) TestIncreaseReadCnt() {
 			tc.before(t)
 			defer tc.after(t)
 
-			err := i.svc.IncreaseReadCnt(context.Background(), tc.biz, tc.bizId)
-
+			resp, err := i.server.IncreaseReadCnt(context.Background(), &intrv1.IncreaseReadCntRequest{
+				Biz: tc.biz, BizId: tc.bizId,
+			})
 			assert.Equal(t, tc.wantErr, err)
+			assert.Equal(t, tc.wantResp, resp)
 
 		})
 
@@ -268,6 +274,9 @@ func (i *InteractiveSvcSuite) TestLike() {
 		bizId  int64
 		biz    string
 		userId int64
+
+		wantResp *intrv1.LikeResponse
+		wantErr  error
 	}{
 		// 新建记录, 数据库有, 缓存无
 		{
@@ -315,9 +324,10 @@ func (i *InteractiveSvcSuite) TestLike() {
 				assert.Equal(t, 0, val)
 			},
 
-			bizId:  1,
-			biz:    "test",
-			userId: 1,
+			bizId:    1,
+			biz:      "test",
+			userId:   1,
+			wantResp: &intrv1.LikeResponse{},
 		},
 		// 修改记录, 数据库成功, 缓存成功
 		{
@@ -387,9 +397,10 @@ func (i *InteractiveSvcSuite) TestLike() {
 				assert.Equal(t, 2, val)
 			},
 
-			bizId:  2,
-			biz:    "test",
-			userId: 2,
+			bizId:    2,
+			biz:      "test",
+			userId:   2,
+			wantResp: &intrv1.LikeResponse{},
 		},
 		// 修改记录, 数据库成功, 缓存无
 		{
@@ -453,9 +464,10 @@ func (i *InteractiveSvcSuite) TestLike() {
 				assert.Equal(t, redis.Nil, err)
 			},
 
-			bizId:  3,
-			biz:    "test",
-			userId: 3,
+			bizId:    3,
+			biz:      "test",
+			userId:   3,
+			wantResp: &intrv1.LikeResponse{},
 		},
 		// TODO: 同一个用户重复点赞同一个内容, 不知道怎么实现代码
 
@@ -544,8 +556,14 @@ func (i *InteractiveSvcSuite) TestLike() {
 			tc.before(t)
 			defer tc.after(t)
 
-			err := i.svc.Like(context.Background(), tc.biz, tc.bizId, tc.userId)
+			resp, err := i.server.Like(context.Background(), &intrv1.LikeRequest{
+				Biz:    tc.biz,
+				BizId:  tc.bizId,
+				UserId: tc.userId,
+			})
+
 			assert.NoError(t, err)
+			assert.Equal(t, tc.wantResp, resp)
 
 		})
 
@@ -571,7 +589,8 @@ func (i *InteractiveSvcSuite) TestCancelLike() {
 		bizId  int64
 		biz    string
 
-		wantErr error
+		wantErr  error
+		wantResp *intrv1.CancelLikeResponse
 	}{
 		// 修改记录，数据库成功，缓存成功
 		{
@@ -654,9 +673,10 @@ func (i *InteractiveSvcSuite) TestCancelLike() {
 				assert.Equal(t, 0, val)
 			},
 
-			userId: 1,
-			bizId:  1,
-			biz:    "test",
+			userId:   1,
+			bizId:    1,
+			biz:      "test",
+			wantResp: &intrv1.CancelLikeResponse{},
 		},
 		// 修改记录，数据库成功，缓存失败
 		{
@@ -735,9 +755,10 @@ func (i *InteractiveSvcSuite) TestCancelLike() {
 				assert.Equal(t, redis.Nil, err)
 			},
 
-			userId: 2,
-			bizId:  2,
-			biz:    "test",
+			userId:   2,
+			bizId:    2,
+			biz:      "test",
+			wantResp: &intrv1.CancelLikeResponse{},
 		},
 		// 边界下界测试:点赞数为0, 数据库失败, 缓存不更新
 		{
@@ -819,9 +840,10 @@ func (i *InteractiveSvcSuite) TestCancelLike() {
 				assert.Equal(t, 0, val)
 			},
 
-			userId:  3,
-			bizId:   3,
-			biz:     "test",
+			userId: 3,
+			bizId:  3,
+			biz:    "test",
+
 			wantErr: errors.New("用户非法操作"),
 		},
 	}
@@ -831,8 +853,14 @@ func (i *InteractiveSvcSuite) TestCancelLike() {
 			tc.before(t)
 			defer tc.after(t)
 
-			err := i.svc.CancelLike(context.Background(), tc.biz, tc.bizId, tc.userId)
+			resp, err := i.server.CancelLike(context.Background(), &intrv1.CancelLikeRequest{
+				Biz:    tc.biz,
+				BizId:  tc.bizId,
+				UserId: tc.userId,
+			})
+
 			assert.Equal(t, tc.wantErr, err)
+			assert.Equal(t, tc.wantResp, resp)
 		})
 	}
 
@@ -857,7 +885,8 @@ func (i *InteractiveSvcSuite) TestCollect() {
 		biz       string
 		collectId int64
 
-		wantErr error
+		wantResp *intrv1.CollectResponse
+		wantErr  error
 	}{
 		// 新建记录, 数据库有, 缓存无
 		{
@@ -909,6 +938,7 @@ func (i *InteractiveSvcSuite) TestCollect() {
 			biz:       "test",
 			userId:    1,
 			collectId: 1,
+			wantResp:  &intrv1.CollectResponse{},
 		},
 		// 修改记录, 数据库成功, 缓存成功
 		{
@@ -983,6 +1013,7 @@ func (i *InteractiveSvcSuite) TestCollect() {
 			biz:       "test",
 			userId:    2,
 			collectId: 2,
+			wantResp:  &intrv1.CollectResponse{},
 		},
 		// 修改记录, 数据库成功, 缓存无
 		{
@@ -1051,6 +1082,7 @@ func (i *InteractiveSvcSuite) TestCollect() {
 			biz:       "test",
 			userId:    3,
 			collectId: 3,
+			wantResp:  &intrv1.CollectResponse{},
 		},
 		// TODO: 同一个用户重复收藏同一个内容, 不知道怎么实现代码
 	}
@@ -1060,8 +1092,15 @@ func (i *InteractiveSvcSuite) TestCollect() {
 			tc.before(t)
 			defer tc.after(t)
 
-			err := i.svc.Collect(context.Background(), tc.biz, tc.bizId, tc.collectId, tc.userId)
+			resp, err := i.server.Collect(context.Background(), &intrv1.CollectRequest{
+				Biz:       tc.biz,
+				BizId:     tc.bizId,
+				CollectId: tc.collectId,
+				UserId:    tc.userId,
+			})
+
 			assert.Equal(t, tc.wantErr, err)
+			assert.Equal(t, tc.wantResp, resp)
 		})
 	}
 
@@ -1086,7 +1125,8 @@ func (i *InteractiveSvcSuite) TestCancelCollect() {
 		biz       string
 		collectId int64
 
-		wantErr error
+		wantResp *intrv1.CancelCollectResponse
+		wantErr  error
 	}{
 		// 修改记录，数据库成功，缓存成功
 		{
@@ -1175,6 +1215,7 @@ func (i *InteractiveSvcSuite) TestCancelCollect() {
 			bizId:     1,
 			collectId: 1,
 			biz:       "test",
+			wantResp:  &intrv1.CancelCollectResponse{},
 		},
 		// 修改记录，数据库成功，缓存失败
 		{
@@ -1259,6 +1300,7 @@ func (i *InteractiveSvcSuite) TestCancelCollect() {
 			bizId:     2,
 			collectId: 2,
 			biz:       "test",
+			wantResp:  &intrv1.CancelCollectResponse{},
 		},
 		// 边界下界测试:收藏数为0, 数据库失败, 缓存不更新
 		{
@@ -1355,8 +1397,15 @@ func (i *InteractiveSvcSuite) TestCancelCollect() {
 			tc.before(t)
 			defer tc.after(t)
 
-			err := i.svc.CancelCollect(context.Background(), tc.biz, tc.bizId, tc.collectId, tc.userId)
+			resp, err := i.server.CancelCollect(context.Background(), &intrv1.CancelCollectRequest{
+				Biz:       tc.biz,
+				BizId:     tc.bizId,
+				CollectId: tc.collectId,
+				UserId:    tc.userId,
+			})
+
 			assert.Equal(t, tc.wantErr, err)
+			assert.Equal(t, tc.wantResp, resp)
 		})
 	}
 }
@@ -1380,8 +1429,8 @@ func (i *InteractiveSvcSuite) TestGet() {
 		bizId  int64
 		userId int64
 
-		wantRes domain.Interactive
-		wantErr error
+		wantResp *intrv1.GetResponse
+		wantErr  error
 	}{
 		// 查询缓存,点赞信息表有记录,收藏信息表有记录
 		{
@@ -1429,13 +1478,15 @@ func (i *InteractiveSvcSuite) TestGet() {
 			bizId:  1,
 			userId: 1,
 
-			wantRes: domain.Interactive{
-				BizId:      1,
-				ReadCnt:    111,
-				LikeCnt:    222,
-				CollectCnt: 333,
-				Liked:      true,
-				Collected:  true,
+			wantResp: &intrv1.GetResponse{
+				Intr: &intrv1.Interactive{
+					BizId:      1,
+					ReadCnt:    111,
+					LikeCnt:    222,
+					CollectCnt: 333,
+					Liked:      true,
+					Collected:  true,
+				},
 			},
 		},
 		// 查询缓存,点赞信息表取消点赞,收藏信息表取消收藏
@@ -1483,13 +1534,15 @@ func (i *InteractiveSvcSuite) TestGet() {
 			bizId:  2,
 			userId: 2,
 
-			wantRes: domain.Interactive{
-				BizId:      2,
-				ReadCnt:    111,
-				LikeCnt:    222,
-				CollectCnt: 333,
-				Liked:      false,
-				Collected:  false,
+			wantResp: &intrv1.GetResponse{
+				Intr: &intrv1.Interactive{
+					BizId:      2,
+					ReadCnt:    111,
+					LikeCnt:    222,
+					CollectCnt: 333,
+					Liked:      false,
+					Collected:  false,
+				},
 			},
 		},
 		// 查询缓存,点赞信息表无记录,收藏信息表无记录
@@ -1518,13 +1571,15 @@ func (i *InteractiveSvcSuite) TestGet() {
 			bizId:  3,
 			userId: 3,
 
-			wantRes: domain.Interactive{
-				BizId:      3,
-				ReadCnt:    111,
-				LikeCnt:    222,
-				CollectCnt: 333,
-				Liked:      false,
-				Collected:  false,
+			wantResp: &intrv1.GetResponse{
+				Intr: &intrv1.Interactive{
+					BizId:      3,
+					ReadCnt:    111,
+					LikeCnt:    222,
+					CollectCnt: 333,
+					Liked:      false,
+					Collected:  false,
+				},
 			},
 		},
 		// 查询库,缓存回写成功,点赞信息表有记录,收藏信息表有记录
@@ -1575,13 +1630,15 @@ func (i *InteractiveSvcSuite) TestGet() {
 			bizId:  4,
 			userId: 4,
 
-			wantRes: domain.Interactive{
-				BizId:      4,
-				ReadCnt:    111,
-				LikeCnt:    222,
-				CollectCnt: 333,
-				Liked:      true,
-				Collected:  true,
+			wantResp: &intrv1.GetResponse{
+				Intr: &intrv1.Interactive{
+					BizId:      4,
+					ReadCnt:    111,
+					LikeCnt:    222,
+					CollectCnt: 333,
+					Liked:      true,
+					Collected:  true,
+				},
 			},
 		},
 	}
@@ -1592,11 +1649,16 @@ func (i *InteractiveSvcSuite) TestGet() {
 			defer tc.after(t)
 
 			start := time.Now()
-			res, err := i.svc.Get(context.Background(), tc.biz, tc.bizId, tc.userId)
+			resp, err := i.server.Get(context.Background(), &intrv1.GetRequest{
+				Biz:    tc.biz,
+				BizId:  tc.bizId,
+				UserId: tc.userId,
+			})
+
 			cost := time.Since(start).Milliseconds()
 			t.Log("cost=", cost)
 			assert.Equal(t, tc.wantErr, err)
-			assert.Equal(t, tc.wantRes, res)
+			assert.Equal(t, tc.wantResp, resp)
 
 		})
 	}
@@ -1622,8 +1684,8 @@ func (i *InteractiveSvcSuite) TestGetByIds() {
 		biz    string
 		bizIds []int64
 
-		wantRes map[int64]domain.Interactive
-		wantErr error
+		wantResp *intrv1.GetByIdsResponse
+		wantErr  error
 	}{
 		// 数据库没有记录
 		{
@@ -1631,9 +1693,11 @@ func (i *InteractiveSvcSuite) TestGetByIds() {
 			before: func(t *testing.T) {},
 			after:  func(t *testing.T) {},
 
-			biz:     "test",
-			bizIds:  []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			wantRes: map[int64]domain.Interactive{},
+			biz:    "test",
+			bizIds: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			wantResp: &intrv1.GetByIdsResponse{
+				Intrs: map[int64]*intrv1.Interactive{},
+			},
 		},
 		// 批量查询数据库记录
 		{
@@ -1657,17 +1721,19 @@ func (i *InteractiveSvcSuite) TestGetByIds() {
 
 			biz:    "test",
 			bizIds: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			wantRes: map[int64]domain.Interactive{
-				1:  {BizId: 1, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				2:  {BizId: 2, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				3:  {BizId: 3, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				4:  {BizId: 4, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				5:  {BizId: 5, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				6:  {BizId: 6, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				7:  {BizId: 7, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				8:  {BizId: 8, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				9:  {BizId: 9, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
-				10: {BizId: 10, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+			wantResp: &intrv1.GetByIdsResponse{
+				Intrs: map[int64]*intrv1.Interactive{
+					1:  {BizId: 1, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					2:  {BizId: 2, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					3:  {BizId: 3, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					4:  {BizId: 4, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					5:  {BizId: 5, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					6:  {BizId: 6, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					7:  {BizId: 7, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					8:  {BizId: 8, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					9:  {BizId: 9, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+					10: {BizId: 10, ReadCnt: 111, LikeCnt: 222, CollectCnt: 333},
+				},
 			},
 		},
 	}
@@ -1677,9 +1743,12 @@ func (i *InteractiveSvcSuite) TestGetByIds() {
 			tc.before(t)
 			defer tc.after(t)
 
-			res, err := i.svc.GetByIds(context.Background(), tc.biz, tc.bizIds)
+			resp, err := i.server.GetByIds(context.Background(), &intrv1.GetByIdsRequest{
+				Biz:    tc.biz,
+				BizIds: tc.bizIds,
+			})
 			assert.Equal(t, tc.wantErr, err)
-			assert.Equal(t, tc.wantRes, res)
+			assert.Equal(t, tc.wantResp, resp)
 
 		})
 	}

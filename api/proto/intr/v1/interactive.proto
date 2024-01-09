@@ -5,7 +5,7 @@ option go_package = "intr/v1;intrv1";
 
 service InteractiveService  {
   rpc IncreaseReadCnt(IncreaseReadCntRequest) returns(IncreaseReadCntResponse);
-  rpc  Like(LikeRequest) returns(LikeResponse);
+  rpc Like(LikeRequest) returns(LikeResponse);
   rpc CancelLike(CancelLikeRequest) returns(CancelLikeResponse);
   rpc Collect(CollectRequest) returns(CollectResponse);
   rpc CancelCollect(CancelCollectRequest) returns(CancelCollectResponse);
