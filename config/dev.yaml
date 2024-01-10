@@ -17,4 +17,4 @@ grpc:
     intr:
       addr: "localhost:8090"
       # 流量阈值
-      threshold: 100
+      threshold: 111
