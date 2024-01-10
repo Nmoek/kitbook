@@ -4,7 +4,6 @@ package main
 
 import (
 	"github.com/google/wire"
-	"kitbook/interactive/events"
 	repository2 "kitbook/interactive/repository"
 	cache2 "kitbook/interactive/repository/cache"
 	dao2 "kitbook/interactive/repository/dao"
@@ -32,7 +31,7 @@ var rankingSvcSet = wire.NewSet(
 	service.NewBatchRankingService,
 )
 
-func InitWebServer() *App {
+func InitApp() *App {
 
 	wire.Build(
 		// 第三方依赖
@@ -44,14 +43,15 @@ func InitWebServer() *App {
 		ioc.InitJobs,
 		ioc.InitRankingJob,
 		ioc.InitRlockClient,
+		ioc.InitIntrClient,
 		//ioc.InitFreeCache,
 
-		interactiveSvcSet,
 		rankingSvcSet,
+		interactiveSvcSet,
 
 		article.NewSaramaSyncProducer,
-		events.NewInteractiveReadEventConsumer,
-		ioc.InitConsumers,
+		//events.NewInteractiveReadEventConsumer,
+		//ioc.InitConsumers,
 
 		dao.NewGormUserDao,
 		dao.NewGormArticleDao,

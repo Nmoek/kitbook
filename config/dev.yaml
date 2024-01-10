@@ -11,3 +11,10 @@ db:
 kafka:
   addr:
     - "localhost:9094"
+
+grpc:
+  client:
+    intr:
+        addr: "localhost:8090"
+        # 流量阈值      
+        threshold: 100 

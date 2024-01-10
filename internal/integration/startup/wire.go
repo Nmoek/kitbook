@@ -5,10 +5,6 @@ package startup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	repository2 "kitbook/interactive/repository"
-	cache2 "kitbook/interactive/repository/cache"
-	dao2 "kitbook/interactive/repository/dao"
-	service2 "kitbook/interactive/service"
 	"kitbook/internal/events/article"
 	"kitbook/internal/repository"
 	"kitbook/internal/repository/cache"
@@ -28,13 +24,6 @@ var thirdPartySet = wire.NewSet(
 	InitConsumers,
 )
 
-var interactiveSvcSet = wire.NewSet(
-	dao2.NewGORMInteractiveDao,
-	cache2.NewRedisInteractiveCache,
-	repository2.NewArticleInteractiveRepository,
-	service2.NewArticleInteractiveService,
-)
-
 var userSvcProvider = wire.NewSet(
 	dao.NewGormUserDao,
 	cache.NewRedisUserCache,
@@ -47,7 +36,6 @@ func InitWebServer() *gin.Engine {
 	wire.Build(
 		// 第三方依赖
 		thirdPartySet,
-		interactiveSvcSet,
 
 		dao.NewGormUserDao,
 		dao.NewGormArticleDao,

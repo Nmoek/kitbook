@@ -5,8 +5,7 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
-	domain2 "kitbook/interactive/domain"
-	service2 "kitbook/interactive/service"
+	intrv1 "kitbook/api/proto/gen/intr/v1"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
 	ijwt "kitbook/internal/web/jwt"
@@ -18,14 +17,14 @@ import (
 
 type ArticleHandler struct {
 	svc            service.ArticleService
-	interactiveSvc service2.InteractiveService
+	interactiveSvc intrv1.InteractiveServiceClient
 
 	l   logger.Logger
 	biz string
 }
 
 func NewArticleHandler(svc service.ArticleService,
-	interactiveSvc service2.InteractiveService,
+	interactiveSvc intrv1.InteractiveServiceClient,
 	l logger.Logger) *ArticleHandler {
 	return &ArticleHandler{
 		svc:            svc,
@@ -445,7 +444,7 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	var (
 		eg   errgroup.Group
 		art  domain.Article
-		intr domain2.Interactive
+		resp *intrv1.GetResponse
 	)
 
 	idStr := ctx.Param("id")
@@ -471,7 +470,12 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	// 并发2 查询互动内容 阅读数、点赞数、收藏数
 	eg.Go(func() error {
 		var err2 error
-		intr, err2 = a.interactiveSvc.Get(ctx, a.biz, artId, claims.UserID)
+		resp, err2 = a.interactiveSvc.Get(ctx, &intrv1.GetRequest{
+			Biz:    a.biz,
+			BizId:  artId,
+			UserId: claims.UserID,
+		})
+
 		return err2
 	})
 
@@ -498,11 +502,11 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 				Ctime:      art.Ctime.Format(time.DateTime),
 				Utime:      art.Utime.Format(time.DateTime),
 
-				ReadCnt:    intr.ReadCnt,
-				LikeCnt:    intr.LikeCnt,
-				CollectCnt: intr.CollectCnt,
-				Liked:      intr.Liked,
-				Collected:  intr.Collected,
+				ReadCnt:    resp.Intr.ReadCnt,
+				LikeCnt:    resp.Intr.LikeCnt,
+				CollectCnt: resp.Intr.CollectCnt,
+				Liked:      resp.Intr.Liked,
+				Collected:  resp.Intr.Collected,
 			}})
 
 		// TODO: 阅读数先查后加、先加后查问题
@@ -568,10 +572,18 @@ func (a *ArticleHandler) Like(ctx *gin.Context) {
 
 	if req.Like {
 
-		err = a.interactiveSvc.Like(ctx, a.biz, req.Id, claims.UserID)
-	} else {
-		err = a.interactiveSvc.CancelLike(ctx, a.biz, req.Id, claims.UserID)
+		_, err = a.interactiveSvc.Like(ctx, &intrv1.LikeRequest{
+			Biz:    a.biz,
+			BizId:  req.Id,
+			UserId: claims.UserID,
+		})
 
+	} else {
+		_, err = a.interactiveSvc.CancelLike(ctx, &intrv1.CancelLikeRequest{
+			Biz:    a.biz,
+			BizId:  req.Id,
+			UserId: claims.UserID,
+		})
 	}
 
 	switch err {
@@ -611,6 +623,8 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 		Id int64 `json:"id"`
 		// 收藏夹ID
 		CollectId int64 `json:"collectId"`
+		// 收藏/取消收藏
+		Coollect bool `json:"coollect"`
 	}
 
 	var req CollectReq
@@ -627,17 +641,34 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 
 	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
 
-	err = a.interactiveSvc.Collect(ctx, a.biz, req.Id, req.CollectId, claims.UserID)
+	if req.Coollect {
+		_, err = a.interactiveSvc.Collect(ctx, &intrv1.CollectRequest{
+			Biz:       a.biz,
+			BizId:     req.Id,
+			CollectId: req.CollectId,
+			UserId:    claims.UserID,
+		})
+
+	} else {
+		_, err = a.interactiveSvc.CancelCollect(ctx, &intrv1.CancelCollectRequest{
+			Biz:       a.biz,
+			BizId:     req.Id,
+			CollectId: req.CollectId,
+			UserId:    claims.UserID,
+		})
+	}
 
 	switch err {
 	case nil:
-		a.l.INFO(logKey, fields.Add(logger.String("收藏成功")).
+		a.l.INFO(logKey, fields.Add(logger.String("收藏/取消成功")).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
-			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Int[int64]("artId", req.Id)).
+			Add(logger.Int[int64]("collectId", req.CollectId)).
+			Add(logger.Field{"isCollect", req.Coollect}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 
 		ctx.JSON(http.StatusOK, Result{
-			Msg: "收藏成功",
+			Msg: "收藏/取消收藏成功",
 		})
 		return
 	default:
@@ -651,6 +682,9 @@ ERR:
 		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Field{"collectId", req.CollectId}).
+			Add(logger.Field{"isCollect", req.Coollect}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
+
 	return
 }

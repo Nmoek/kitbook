@@ -9,7 +9,7 @@ import (
 func main() {
 	// 初始化配置模块
 	initViper()
-	initPrometheus()
+	//initPrometheus()
 
 	// 初始化Web服务
 	app := InitApp()

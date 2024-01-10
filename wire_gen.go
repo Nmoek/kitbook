@@ -8,7 +8,6 @@ package main
 
 import (
 	"github.com/google/wire"
-	"kitbook/interactive/events"
 	repository2 "kitbook/interactive/repository"
 	cache2 "kitbook/interactive/repository/cache"
 	dao2 "kitbook/interactive/repository/dao"
@@ -25,7 +24,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitWebServer() *App {
+func InitApp() *App {
 	cmdable := ioc.InitRedis()
 	limiter := ioc.InitLimiter(cmdable)
 	jwtHandler := jwt.NewRedisJWTHandler(cmdable)
@@ -54,18 +53,16 @@ func InitWebServer() *App {
 	interactiveCache := cache2.NewRedisInteractiveCache(cmdable)
 	interactiveRepository := repository2.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
 	interactiveService := service2.NewArticleInteractiveService(interactiveRepository, logger)
-	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
+	interactiveServiceClient := ioc.InitIntrClient(interactiveService)
+	articleHandler := web.NewArticleHandler(articleService, interactiveServiceClient, logger)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
-	interactiveReadEventConsumer := events.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
-	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
-	rankingService := service.NewBatchRankingService(interactiveService, articleService)
+	rankingService := service.NewBatchRankingService(interactiveServiceClient, articleService)
 	rlockClient := ioc.InitRlockClient(cmdable)
 	rankingJob := ioc.InitRankingJob(rankingService, rlockClient, logger)
 	cron := ioc.InitJobs(logger, rankingJob)
 	app := &App{
-		server:    engine,
-		consumers: v2,
-		cron:      cron,
+		server: engine,
+		cron:   cron,
 	}
 	return app
 }

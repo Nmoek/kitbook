@@ -18,7 +18,7 @@ func (s *Server) Serve() {
 		panic(err)
 	}
 
-	fmt.Printf("grpc service listening....")
+	fmt.Printf("grpc service listening....\n")
 
 	err = s.Server.Serve(l)
 	if err != nil {

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"github.com/liyue201/gostl/ds/priorityqueue"
-	"kitbook/interactive/service"
+	intrv1 "kitbook/api/proto/gen/intr/v1"
 	"kitbook/internal/domain"
 	"kitbook/internal/repository"
 	"math"
@@ -16,7 +16,7 @@ type RankingService interface {
 }
 
 type BatchRankingService struct {
-	intrSvc service.InteractiveService
+	intrSvc intrv1.InteractiveServiceClient
 	artSvc  ArticleService
 
 	repo repository.RankingRepository
@@ -27,7 +27,7 @@ type BatchRankingService struct {
 	n         int //总共需要多少条数据
 }
 
-func NewBatchRankingService(intrSvc service.InteractiveService, artSvc ArticleService) RankingService {
+func NewBatchRankingService(intrSvc intrv1.InteractiveServiceClient, artSvc ArticleService) RankingService {
 	return &BatchRankingService{
 		intrSvc:   intrSvc,
 		artSvc:    artSvc,
@@ -111,11 +111,16 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 			bizIds = append(bizIds, art.Id)
 		}
 
-		// 取出点赞数
-		intrMap, err := b.intrSvc.GetByIds(ctx, "article", bizIds)
+		// 远程调用-取出点赞数
+		intrResp, err := b.intrSvc.GetByIds(ctx, &intrv1.GetByIdsRequest{
+			Biz:    "article",
+			BizIds: bizIds,
+		})
 		if err != nil {
 			return nil, err
 		}
+
+		intrMap := intrResp.Intrs
 
 		// 计算score
 		for _, art := range arts {
