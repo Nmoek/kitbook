@@ -115,9 +115,12 @@ func (svc *NormalUserService) Edit(ctx context.Context, user domain.User) error 
 // @return interface{}
 // @return interface{}
 func (svc *NormalUserService) Profile(ctx context.Context, id int64) (domain.User, error) {
-
-	return svc.repo.FindById(ctx, id)
-
+	user, err := svc.repo.FindById(ctx, id)
+	if err == repository.ErrUserNotFound {
+		return domain.User{}, ErrInvalidUserAccess
+	}
+	
+	return user, err
 }
 
 // @func: SignupOrLoginWithPhone

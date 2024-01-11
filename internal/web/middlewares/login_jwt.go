@@ -23,7 +23,7 @@ func NewLoginJWTMiddlewareBuilder(jwtHdl ijwt.JWTHandler) *LoginJWTMiddlewareBui
 
 // @func: Build
 // @date: 2023-10-09 03:10:02
-// @brief: build模式-登录校验 JWT版
+// @brief: 登录校验-普通JWT版
 // @author: Kewin Li
 // @receiver builder
 // @return gin.HandlerFunc

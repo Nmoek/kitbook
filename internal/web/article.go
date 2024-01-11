@@ -624,7 +624,7 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 		// 收藏夹ID
 		CollectId int64 `json:"collectId"`
 		// 收藏/取消收藏
-		Coollect bool `json:"coollect"`
+		Collect bool `json:"collect"`
 	}
 
 	var req CollectReq
@@ -641,7 +641,7 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 
 	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
 
-	if req.Coollect {
+	if req.Collect {
 		_, err = a.interactiveSvc.Collect(ctx, &intrv1.CollectRequest{
 			Biz:       a.biz,
 			BizId:     req.Id,
@@ -664,7 +664,7 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Int[int64]("artId", req.Id)).
 			Add(logger.Int[int64]("collectId", req.CollectId)).
-			Add(logger.Field{"isCollect", req.Coollect}).
+			Add(logger.Field{"isCollect", req.Collect}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 
 		ctx.JSON(http.StatusOK, Result{
@@ -683,7 +683,7 @@ ERR:
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", req.Id}).
 			Add(logger.Field{"collectId", req.CollectId}).
-			Add(logger.Field{"isCollect", req.Coollect}).
+			Add(logger.Field{"isCollect", req.Collect}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 
 	return

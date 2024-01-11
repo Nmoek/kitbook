@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -36,6 +37,8 @@ func InitIntrClient(svc service.InteractiveService) intrv1.InteractiveServiceCli
 	local := client.NewLocalInteractiveServiceAdapter(svc)
 	res := client.NewInteractiveClient(remote, local)
 
+	fmt.Printf("cfg= %v \n", cfg)
+
 	viper.OnConfigChange(func(in fsnotify.Event) {
 		cfg = Config{}
 		err2 := viper.UnmarshalKey("grpc.client.intr", &cfg)
@@ -43,6 +46,7 @@ func InitIntrClient(svc service.InteractiveService) intrv1.InteractiveServiceCli
 			panic(err2)
 		}
 
+		fmt.Printf("流量阈值=%v \n", cfg.Threshold)
 		// 流量分流阈值
 		res.UpdateThreshold(cfg.Threshold)
 	})

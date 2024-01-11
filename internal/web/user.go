@@ -66,9 +66,13 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	group := server.Group("/users")
 	group.GET("/profile", h.Profile)     //查询用户信息
 	group.POST("/login", h.LoginWithJWT) //JWT登录
+
 	//group.POST("/login", h.Login)    //登录
 	group.POST("/signup", h.SignUp) //注册
 	group.POST("/edit", h.Edit)     //修改个人信息
+
+	//DEBUG: 单元测试使用
+	group.POST("/test/login", h.Login) //session登录
 
 	// 通过长token刷新短token
 	group.GET("/refresh_token", h.RefreshToken)
@@ -79,6 +83,8 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 
 	//group.POST("/logout", h.Logout)
 
+	//DEBUG: 单元测试使用
+	group.POST("/test/logout", h.Logout) //session登出
 	group.POST("/logout", h.LogoutWithJWT)
 
 }
@@ -105,7 +111,7 @@ func (h *UserHandler) setSession(ctx *gin.Context, id int64) error {
 
 // @func: Login
 // @date: 2023-10-12 03:30:44
-// @brief: 用户模块-登录
+// @brief: 用户模块-登录通过session方式
 // @author: Kewin Li
 // @receiver h
 // @param ctx
@@ -145,7 +151,9 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 				Add(logger.Field{"IP", ctx.ClientIP()}).
 				Add(logger.Field{"email", req.Email})...)
 
-		ctx.String(http.StatusOK, "邮箱格式错误！[xxx@qq.com]")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "邮箱格式错误！[xxx@qq.com]",
+		})
 		return
 	}
 
@@ -155,6 +163,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	case nil:
 
 		// 设置Seesion
+		// TODO: 这里如何单元测试？
 		err = h.setSession(ctx, user.Id)
 		if err != nil {
 			fields = fields.Add(logger.String("session创建失败"))
@@ -167,7 +176,9 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 				Add(logger.Field{"email", req.Email}).
 				Add(logger.Field{"userID", user.Id})...)
 
-		ctx.String(http.StatusOK, "登录成功！")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "登录成功！",
+		})
 		return
 	case service.ErrInvalidUserOrPassword:
 
@@ -177,7 +188,9 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 				Add(logger.Field{"email", req.Email}).
 				Add(logger.Field{"userID", user.Id})...)
 
-		ctx.String(http.StatusOK, "用户名或密码不正确!")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "用户名或密码错误!",
+		})
 		return
 	default:
 
@@ -189,7 +202,10 @@ ERR:
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"email", req.Email}).
 			Add(logger.Field{"userID", user.Id})...)
-	ctx.String(http.StatusOK, "系统错误")
+
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "系统错误",
+	})
 	return
 
 }
@@ -233,7 +249,9 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 				Add(logger.Field{"IP", ctx.ClientIP()}).
 				Add(logger.Field{"email", req.Email})...)
 
-		ctx.String(http.StatusOK, "邮箱格式错误, 例[xxx@qq.com]")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "邮箱格式错误, 例[xxx@qq.com]",
+		})
 		return
 	}
 
@@ -243,7 +261,6 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 		err = h.jwtHdl.SetTokenWithSsid(ctx, user.Id)
 		if err != nil {
 			fields = fields.Add(logger.String("设置token失败"))
-
 			goto ERR
 		}
 
@@ -253,7 +270,9 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 				Add(logger.Field{"email", req.Email}).
 				Add(logger.Field{"userID", user.Id})...)
 
-		ctx.String(http.StatusOK, "登录成功!")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "登录成功!",
+		})
 		return
 
 	case service.ErrInvalidUserOrPassword:
@@ -263,7 +282,9 @@ func (h *UserHandler) LoginWithJWT(ctx *gin.Context) {
 				Add(logger.Field{"email", req.Email}).
 				Add(logger.Field{"userID", user.Id})...)
 
-		ctx.String(http.StatusOK, "用户名或密码错误!")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "用户名或密码错误!",
+		})
 		return
 	default:
 
@@ -406,7 +427,7 @@ func checkBySession(ctx *gin.Context) int64 {
 	return session.Get("userID").(int64)
 }
 
-func checkByJWT(ctx *gin.Context) int64 {
+func (h *UserHandler) checkByJWT(ctx *gin.Context) int64 {
 	val := ctx.MustGet("user_token")
 	if val == nil {
 		return -1
@@ -446,7 +467,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	//1. 数据校验
 	//2. 如何查询当前修改信息的用户是谁?
 	//userID := checkBySession(ctx)
-	userID = checkByJWT(ctx)
+	userID = h.checkByJWT(ctx)
 	if userID < 0 {
 		err = errors.New("非法用户访问")
 		goto ERR
@@ -503,14 +524,6 @@ ERR:
 // @param ctx
 func (h *UserHandler) Profile(ctx *gin.Context) {
 
-	type UserResponse struct {
-		Nickname string `json:"nickname"`
-		Email    string `json:"email"`
-		Phone    string `json:"phone"`
-		Birthday string `json:"birthday"`
-		AboutMe  string `json:"aboutMe"`
-	}
-
 	var userID int64
 	var err error
 	var user domain.User
@@ -519,7 +532,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 	// 1. 用户ID
 	//userID := checkBySession(ctx)
-	userID = checkByJWT(ctx)
+	userID = h.checkByJWT(ctx)
 	if userID < 0 {
 		err = errors.New("非法用户访问")
 		goto ERR
@@ -529,13 +542,8 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 	switch err {
 	case nil:
-		ctx.JSON(http.StatusOK, UserResponse{
-			Nickname: user.Nickname,
-			Email:    user.Email,
-			Phone:    "",
-			Birthday: user.Birthday.Format(time.DateOnly),
-			AboutMe:  user.AboutMe,
-		})
+		// 转化为返回给前端响应的用户个人信息
+		ctx.JSON(http.StatusOK, ConvertsProfileVo(&user))
 
 		h.l.INFO(logKey,
 			fields.Add(logger.String("查看个人信息")).
@@ -591,14 +599,15 @@ func (h *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 	}
 
 	if !isValid {
-
 		h.l.WARN(logKey,
 			fields.Add(logger.String("手机号格式错误")).
 				Add(logger.Error(err)).
 				Add(logger.Field{"IP", ctx.ClientIP()}).
 				Add(logger.Field{"phone", req.Phone})...)
 
-		ctx.String(http.StatusOK, "手机号格式错误")
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "手机号格式错误",
+		})
 		return
 	}
 
@@ -684,13 +693,15 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	}
 
 	if !isValid {
-
 		h.l.WARN(logKey,
 			fields.Add(logger.String("手机号格式错误")).
 				Add(logger.Error(err)).
 				Add(logger.Field{"IP", ctx.ClientIP()}).
 				Add(logger.Field{"phone", req.Phone})...)
-		ctx.String(http.StatusOK, "手机号格式错误")
+
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "手机号格式错误",
+		})
 		return
 	}
 
@@ -727,8 +738,18 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 
 	err = h.jwtHdl.SetTokenWithSsid(ctx, user.Id)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		goto ERR
+
+		h.l.WARN(logKey,
+			fields.Add(logger.String("token设置失败")).
+				Add(logger.Error(err)).
+				Add(logger.Field{"IP", ctx.ClientIP()}).
+				Add(logger.Field{"phone", req.Phone}).
+				Add(logger.Field{"code", req.Code})...)
+
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, Result{
+			Msg: "系统错误",
+		})
+		return
 	}
 
 	// 设置Seesion 该实现也可以
@@ -739,7 +760,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	//}
 
 	// TODO: 手机号敏感信息，单独处理
-	h.l.WARN(logKey,
+	h.l.INFO(logKey,
 		fields.Add(logger.String("验证码登录成功")).
 			Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).

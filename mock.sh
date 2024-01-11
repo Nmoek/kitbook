@@ -30,6 +30,7 @@ mockgen -package=redismocks -destination=./internal/repository/cache/redismocks/
 
 mockgen -source=D:./pkg/limiter/types.go -package=limitermocks -destination=./pkg/limiter/mocks/limiter.mock.go
 
+mockgen -source=D:./internal/web/jwt/types.go -package=jwtmocks -destination=./internal/web/jwt/mocks/jwt.mock.go
 
 go mod tidy
 
