@@ -609,6 +609,8 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 		Id int64 `json:"id"`
 		// 收藏夹ID
 		CollectId int64 `json:"collectId"`
+		// 收藏/取消收藏
+		Collect bool `json:"collect"`
 	}
 
 	var req CollectReq
@@ -625,17 +627,25 @@ func (a *ArticleHandler) Collect(ctx *gin.Context) {
 
 	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
 
-	err = a.interactiveSvc.Collect(ctx, a.biz, req.Id, req.CollectId, claims.UserID)
+	if req.Collect {
+		err = a.interactiveSvc.Collect(ctx, a.biz, req.Id, req.CollectId, claims.UserID,)
+
+	} else {
+		err = a.interactiveSvc.CancelCollect(ctx, a.biz, req.Id, req.CollectId, claims.UserID,)
+
+	}
 
 	switch err {
 	case nil:
-		a.l.INFO(logKey, fields.Add(logger.String("收藏成功")).
+		a.l.INFO(logKey, fields.Add(logger.String("收藏/取消成功")).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
-			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Int[int64]("artId", req.Id)).
+			Add(logger.Int[int64]("collectId", req.CollectId)).
+			Add(logger.Field{"isCollect", req.Collect}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 
 		ctx.JSON(http.StatusOK, Result{
-			Msg: "收藏成功",
+			Msg: "收藏/取消收藏成功",
 		})
 		return
 	default:
@@ -649,6 +659,9 @@ ERR:
 		fields.Add(logger.Error(err)).
 			Add(logger.Field{"IP", ctx.ClientIP()}).
 			Add(logger.Field{"artId", req.Id}).
+			Add(logger.Field{"collectId", req.CollectId}).
+			Add(logger.Field{"isCollect", req.Collect}).
 			Add(logger.Int[int64]("userId", claims.UserID))...)
+
 	return
 }
