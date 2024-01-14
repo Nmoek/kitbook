@@ -23,3 +23,5 @@ venc/
 
 # Go workspace file
 go.work
+/interactive/integration/data.sql
+/interactive/integration/intr_240114.sql
