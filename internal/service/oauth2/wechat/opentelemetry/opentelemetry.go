@@ -19,7 +19,7 @@ func NewDecorator(svc wechat.Service, tracer trace.Tracer) *Decorator {
 	}
 }
 
-func (d *Decorator) VerifyCode(ctx context.Context, code string) (domain.WechtInfo, error) {
+func (d *Decorator) VerifyCode(ctx context.Context, code string) (domain.WechatInfo, error) {
 	tpCtx, span := d.tracer.Start(ctx, "wechat")
 	span.AddEvent("微信验证登录")
 	info, err := d.Service.VerifyCode(tpCtx, code)

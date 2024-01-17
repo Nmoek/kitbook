@@ -20,7 +20,7 @@ func NewDecorator(svc wechat.Service, sum prometheus.Summary) *Decorator {
 	}
 }
 
-func (d *Decorator) VerifyCode(ctx context.Context, code string) (domain.WechtInfo, error) {
+func (d *Decorator) VerifyCode(ctx context.Context, code string) (domain.WechatInfo, error) {
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start).Microseconds()

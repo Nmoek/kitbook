@@ -22,7 +22,7 @@ type UserService interface {
 	Edit(ctx context.Context, user domain.User) error
 	Profile(ctx context.Context, id int64) (domain.User, error)
 	SignupOrLoginWithPhone(ctx context.Context, phone string) (domain.User, error)
-	SignupOrLoginWithWechat(ctx context.Context, info domain.WechtInfo) (domain.User, error)
+	SignupOrLoginWithWechat(ctx context.Context, info domain.WechatInfo) (domain.User, error)
 }
 
 // NormalUserService
@@ -49,7 +49,7 @@ func NewNormalUserService(repo repository.UserRepository) UserService {
 // @brief: 用户注册服务
 // @author: Kewin Li
 // @receiver svc
-// @param ctx  TODO: 这个参数是做干嘛的？
+// @param ctx
 // @param user
 // @return error
 func (svc *NormalUserService) Signup(ctx context.Context, user domain.User) error {
@@ -119,7 +119,7 @@ func (svc *NormalUserService) Profile(ctx context.Context, id int64) (domain.Use
 	if err == repository.ErrUserNotFound {
 		return domain.User{}, ErrInvalidUserAccess
 	}
-	
+
 	return user, err
 }
 
@@ -166,7 +166,7 @@ func (svc *NormalUserService) SignupOrLoginWithPhone(ctx context.Context, phone 
 // @param info
 // @return domain.User
 // @return error
-func (svc *NormalUserService) SignupOrLoginWithWechat(ctx context.Context, info domain.WechtInfo) (domain.User, error) {
+func (svc *NormalUserService) SignupOrLoginWithWechat(ctx context.Context, info domain.WechatInfo) (domain.User, error) {
 	// 默认认为大多数用户式已经注册的
 	user, err := svc.repo.FindByWechat(ctx, info.Openid)
 	if err == nil || err != repository.ErrUserNotFound {

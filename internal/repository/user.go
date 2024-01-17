@@ -54,6 +54,14 @@ func (repo *CacheUserRepository) Create(ctx context.Context, u domain.User) erro
 			String: u.Phone,
 			Valid:  u.Phone != "",
 		},
+		Openid: sql.NullString{
+			String: u.WechatInfo.Openid,
+			Valid:  u.WechatInfo.Openid != "",
+		},
+		Unionid: sql.NullString{
+			String: u.WechatInfo.Unionid,
+			Valid:  u.WechatInfo.Unionid != "",
+		},
 	})
 
 }
@@ -190,7 +198,7 @@ func ConvertsDomainUser(user *dao.User) domain.User {
 		Nickname: user.Nickname,
 		Birthday: time.UnixMilli(user.Birthday),
 		AboutMe:  user.AboutMe,
-		WechatInfo: domain.WechtInfo{
+		WechatInfo: domain.WechatInfo{
 			Unionid: user.Unionid.String,
 			Openid:  user.Openid.String,
 		},

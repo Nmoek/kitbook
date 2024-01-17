@@ -113,7 +113,7 @@ func (mr *MockUserServiceMockRecorder) SignupOrLoginWithPhone(ctx, phone any) *g
 }
 
 // SignupOrLoginWithWechat mocks base method.
-func (m *MockUserService) SignupOrLoginWithWechat(ctx context.Context, info domain.WechtInfo) (domain.User, error) {
+func (m *MockUserService) SignupOrLoginWithWechat(ctx context.Context, info domain.WechatInfo) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SignupOrLoginWithWechat", ctx, info)
 	ret0, _ := ret[0].(domain.User)

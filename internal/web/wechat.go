@@ -95,7 +95,7 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 	var isValid bool
 	var code string
 	var user domain.User
-	var info domain.WechtInfo
+	var info domain.WechatInfo
 	var logKey = logger.WechatLogMsgKey[logger.LOG_WECHAT_CALLBACK]
 	fields := logger.Fields{}
 

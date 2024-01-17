@@ -18,7 +18,7 @@ var redirectURL = url.PathEscape(`https://meoying.com/oauth2/wechat/callback`)
 
 type Service interface {
 	AuthURL(ctx context.Context, state string) (string, error)
-	VerifyCode(ctx context.Context, code string) (domain.WechtInfo, error)
+	VerifyCode(ctx context.Context, code string) (domain.WechatInfo, error)
 }
 
 type service struct {
@@ -50,7 +50,7 @@ func (s *service) AuthURL(ctx context.Context, state string) (string, error) {
 // @param ctx
 // @param code
 // @return error
-func (s *service) VerifyCode(ctx context.Context, code string) (domain.WechtInfo, error) {
+func (s *service) VerifyCode(ctx context.Context, code string) (domain.WechatInfo, error) {
 	// 第一个参数 appid
 	// 第二个参数 secret
 	// 第三个参数 code
@@ -58,21 +58,21 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.WechtInfo
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, accessTokenUrl, nil)
 	if err != nil {
-		return domain.WechtInfo{}, err
+		return domain.WechatInfo{}, err
 	}
 
 	response, err := s.client.Do(req)
 	if err != nil {
-		return domain.WechtInfo{}, err
+		return domain.WechatInfo{}, err
 	}
 
 	var res Result
 	err = json.NewDecoder(response.Body).Decode(&res)
 	if err != nil {
-		return domain.WechtInfo{}, err
+		return domain.WechatInfo{}, err
 	}
 
-	return domain.WechtInfo{
+	return domain.WechatInfo{
 		Unionid: res.Unionid,
 		Openid:  res.Openid,
 	}, nil
