@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"kitbook/integration/startup"
+	startup2 "kitbook/internal/integration/startup"
 	"kitbook/internal/web"
 	"net/http"
 	"net/http/httptest"
@@ -23,8 +23,8 @@ import (
 // @author: Kewin Li
 // @param t
 func TestUserHandle_SendSMSCode(t *testing.T) {
-	rdb := startup.InitRedis()
-	server := startup.InitWebServer()
+	rdb := startup2.InitRedis()
+	server := startup2.InitWebServer()
 
 	testCases := []struct {
 		name string

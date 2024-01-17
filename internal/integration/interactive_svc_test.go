@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
-	"kitbook/integration/startup"
 	"kitbook/internal/domain"
+	startup2 "kitbook/internal/integration/startup"
 	"kitbook/internal/repository/dao"
 	"kitbook/internal/service"
 	"testing"
@@ -32,9 +32,9 @@ type InteractiveSvcSuite struct {
 }
 
 func (i *InteractiveSvcSuite) SetupSuite() {
-	i.db = startup.InitDB()
-	i.rdb = startup.InitRedis()
-	i.svc = startup.NewInteractiveService()
+	i.db = startup2.InitDB()
+	i.rdb = startup2.InitRedis()
+	i.svc = startup2.NewInteractiveService()
 
 }
 
