@@ -43,7 +43,8 @@ func InitApp() *App {
 		ioc.InitJobs,
 		ioc.InitRankingJob,
 		ioc.InitRlockClient,
-		ioc.InitIntrClient,
+		ioc.InitIntrClientV1,
+		ioc.InitEtcd,
 		//ioc.InitFreeCache,
 
 		rankingSvcSet,

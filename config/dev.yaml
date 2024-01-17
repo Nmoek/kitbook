@@ -12,9 +12,18 @@ kafka:
   addr:
     - "localhost:9094"
 
+etcd:
+  addrs:
+    - "localhost:2379"
+
 grpc:
+  server:
+    etcdAddr: "localhost:2379"
+    port: 8090
+    bizName: "interactive"
   client:
     intr:
-      addr: "localhost:8090"
+#      addr: "localhost:8090"
+      addr: "etcd:////service/interactive"
       # 流量阈值
       threshold: 111
