@@ -23,14 +23,14 @@ func main() {
 	}()
 
 	// 初始化Web服务
-	app := InitWebServer()
+	app := InitApp()
 	// 开始热榜定时任务
 	app.cron.Start()
 	// 等待热榜定时任务退出
 	defer func() {
 		<-app.cron.Stop().Done()
 	}()
-	
+
 	server := app.server
 	for _, c := range app.consumers {
 		err := c.Start()

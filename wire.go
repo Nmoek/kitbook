@@ -27,7 +27,7 @@ var rankingSvcSet = wire.NewSet(
 	service.NewBatchRankingService,
 )
 
-func InitWebServer() *App {
+func InitApp() *App {
 
 	wire.Build(
 		// 第三方依赖

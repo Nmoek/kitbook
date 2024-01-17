@@ -20,7 +20,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitWebServer() *App {
+func InitApp() *App {
 	cmdable := ioc.InitRedis()
 	limiter := ioc.InitLimiter(cmdable)
 	jwtHandler := jwt.NewRedisJWTHandler(cmdable)
@@ -48,7 +48,7 @@ func InitWebServer() *App {
 	interactiveDao := dao.NewGORMInteractiveDao(db)
 	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
 	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
-	interactiveService := service.NewArticleInteractiveService(interactiveRepository)
+	interactiveService := service.NewArticleInteractiveService(interactiveRepository, logger)
 	articleHandler := web.NewArticleHandler(articleService, interactiveService, logger)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2WechatHandler, articleHandler)
 	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, logger)
