@@ -1,3 +1,5 @@
+//go:build k8s
+
 // Package repository
 // @Description: 数据转发层-帖子模块-单元测试
 package repository

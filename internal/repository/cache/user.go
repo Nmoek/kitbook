@@ -7,15 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"kitbook/internal/repository/dao"
+	"kitbook/internal/domain"
 	"time"
 )
 
 const ErrKeyNotExist = redis.Nil
 
 type UserCache interface {
-	Get(ctx context.Context, id int64) (dao.User, error)
-	Set(ctx context.Context, user dao.User) error
+	Get(ctx context.Context, id int64) (domain.User, error)
+	Set(ctx context.Context, user domain.User) error
 }
 
 // RedisUserCache
@@ -46,15 +46,15 @@ func NewRedisUserCache(cmd redis.Cmdable) UserCache {
 // @param id
 // @return interface{}
 // @return interface{}
-func (c *RedisUserCache) Get(ctx context.Context, id int64) (dao.User, error) {
+func (c *RedisUserCache) Get(ctx context.Context, id int64) (domain.User, error) {
 	k := c.Key(id)
 	result := c.cmd.Get(ctx, k)
 	if err := result.Err(); err != nil {
-		return dao.User{}, err
+		return domain.User{}, err
 	}
 
 	// 反序列化
-	var user dao.User
+	var user domain.User
 	err := json.Unmarshal([]byte(result.Val()), &user)
 
 	return user, err
@@ -67,7 +67,7 @@ func (c *RedisUserCache) Get(ctx context.Context, id int64) (dao.User, error) {
 // @receiver cache
 // @param user
 // @return error
-func (c *RedisUserCache) Set(ctx context.Context, user dao.User) error {
+func (c *RedisUserCache) Set(ctx context.Context, user domain.User) error {
 
 	val, err := json.Marshal(&user)
 	if err != nil {

@@ -10,7 +10,7 @@ package cachemocks
 
 import (
 	context "context"
-	dao "kitbook/internal/repository/dao"
+	domain "kitbook/internal/domain"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -40,10 +40,10 @@ func (m *MockUserCache) EXPECT() *MockUserCacheMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockUserCache) Get(ctx context.Context, id int64) (dao.User, error) {
+func (m *MockUserCache) Get(ctx context.Context, id int64) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(dao.User)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -55,7 +55,7 @@ func (mr *MockUserCacheMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // Set mocks base method.
-func (m *MockUserCache) Set(ctx context.Context, user dao.User) error {
+func (m *MockUserCache) Set(ctx context.Context, user domain.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Set", ctx, user)
 	ret0, _ := ret[0].(error)

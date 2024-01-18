@@ -117,7 +117,7 @@ func (repo *CacheUserRepository) FindById(ctx context.Context, id int64) (domain
 	//TODO: 优化细分为key不存在再去查询数据库
 	switch err {
 	case nil:
-		return ConvertsDomainUser(&cacheUser), nil
+		return cacheUser, nil
 	case cache.ErrKeyNotExist:
 		findUser, err := repo.dao.FindByID(ctx, id)
 
@@ -130,7 +130,7 @@ func (repo *CacheUserRepository) FindById(ctx context.Context, id int64) (domain
 		}
 
 		// 插入缓存
-		err = repo.c.Set(ctx, findUser)
+		err = repo.c.Set(ctx, ConvertsDomainUser(&findUser))
 		// 查询缓存err为nil有两种情况:(缓存穿透)
 		// 1. 数据格式等其他因素插入失败
 		// 2. 网络不通、Redis已经崩溃
@@ -141,7 +141,7 @@ func (repo *CacheUserRepository) FindById(ctx context.Context, id int64) (domain
 
 	default:
 		//TODO: 降级写法
-		return domain.User{}, nil
+		return domain.User{}, err
 	}
 
 }
