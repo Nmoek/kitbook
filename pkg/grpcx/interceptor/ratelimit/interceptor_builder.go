@@ -12,7 +12,7 @@ import (
 )
 
 // InterceptorBuilder
-// @Description: gRPC服务治理接入
+// @Description: gRPC接入限流器
 type InterceptorBuilder struct {
 	limiter limiter.Limiter
 	key     string
