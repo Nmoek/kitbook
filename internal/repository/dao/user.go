@@ -44,7 +44,7 @@ func (dao *GormUserDao) Insert(ctx context.Context, u User) error {
 	now := time.Now().UnixMilli()
 	u.Ctime = now
 	u.Utime = now
-	err := dao.db.WithContext(ctx).Create(&u).Error
+	err := dao.db.Debug().WithContext(ctx).Create(&u).Error
 	if me, ok := err.(*mysql.MySQLError); ok {
 		const duplicateErr uint16 = 1062
 		// 用户冲突
@@ -137,20 +137,20 @@ func (dao *GormUserDao) FindByWechat(ctx context.Context, openid string) (User, 
 
 // User
 // @Description: 用户表结构定义
+// 1. 如果查询要求同时查询openid和unionid, 建立联合唯一索引<openid, unionid>
+// 2. 如果查询只要求查询openid，建立一个唯一索引或建立联合唯一索引<openid, unionid>（openid必须在前）
+// 3. 如果查询只要求查询unionid，建立一个唯一索引或建立联合唯一索<unionid, openid>
 type User struct {
 	Id    int64          `gorm:"primaryKey, autoIncrement"`
 	Email sql.NullString `gorm:"unique"`
 	Phone sql.NullString `gorm:"unique"`
 
-	//1. 如果查询要求同时查询openid和unionid, 建立联合唯一索引<openid, unionid>
-	//2. 如果查询只要求查询openid，建立一个唯一索引或建立联合唯一索引<openid, unionid>（openid必须在前）
-	//3. 如果查询只要求查询unionid，建立一个唯一索引或建立联合唯一索<unionid, openid>
 	Openid   sql.NullString `gorm:"unique"`
 	Unionid  sql.NullString
 	Password string
-	Nickname string `gorm:"type=varchar(128)"`
+	Nickname string `gorm:"type:varchar(128)"`
 	Birthday int64
-	AboutMe  string `gorm:"type=varchar(4096)"`
+	AboutMe  string `gorm:"type:varchar(4096)"`
 	Ctime    int64
 	Utime    int64
 }
