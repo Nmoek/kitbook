@@ -438,6 +438,11 @@ func (u *UserRepositorySuite) TestFindByPhone() {
 	}
 }
 
+// @func: TestFindByWechat
+// @date: 2024-01-19 01:59:10
+// @brief: 单元测试-repository层-按微信号查询
+// @author: Kewin Li
+// @receiver u
 func (u *UserRepositorySuite) TestFindByWechat() {
 	t := u.T()
 
