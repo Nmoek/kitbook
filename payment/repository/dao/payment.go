@@ -9,6 +9,7 @@ import (
 type PaymentDao interface {
 	Insert(ctx context.Context, pmt Payment) error
 	Update(ctx context.Context, bizTradeNo string, txnID string, status uint8) error
+	FindExpiredPayment(ctx context.Context, beforeTime time.Time, offset int, limit int) ([]Payment, error)
 }
 
 type GormPaymentDao struct {
@@ -33,6 +34,24 @@ func (g *GormPaymentDao) Update(ctx context.Context, bizTradeNo string, txnID st
 			"status": status,
 			"txn_id": txnID,
 		}).Error
+}
+
+// @func: FindExpiredPayment
+// @date: 2024-02-02 03:01:48
+// @brief: 批量查询超时过期订单
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param beforeTime
+// @param offset
+// @param limit
+// @return Payment
+// @return error
+func (g *GormPaymentDao) FindExpiredPayment(ctx context.Context, beforeTime time.Time, offset int, limit int) ([]Payment, error) {
+	var pmts []Payment
+	err := g.db.WithContext(ctx).Where("utime < ?", beforeTime).
+		Offset(offset).Limit(limit).Find(&pmts).Error
+	return pmts, err
 }
 
 // Payment

@@ -14,6 +14,12 @@ func main() {
 	// 初始化Web服务
 	app := InitApp()
 
+	// 启动定时任务 清理过期超时订单
+	app.corn.Start()
+	defer func() {
+		<-app.corn.Stop().Done()
+	}()
+
 	for _, c := range app.consumers {
 		err := c.Start()
 		if err != nil {

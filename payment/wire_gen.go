@@ -35,16 +35,21 @@ func InitApp() *App {
 	handler := ioc.InitWechatNotifyHandler(wechatConfig)
 	weChatNativeHandler := web.NewWeChatNativeHandler(handler, nativePaymentService, logger)
 	engine := ioc.InitWebServer(weChatNativeHandler)
+	cmdable := ioc.InitRedis()
+	rlockClient := ioc.InitRlockClient(cmdable)
+	syncWechatOrderJob := ioc.InitSyncWechatOrderJob(nativePaymentService, rlockClient, logger)
+	cron := ioc.InitJobs(logger, syncWechatOrderJob)
 	app := &App{
 		consumers: v,
 		rpcServer: server,
 		webServer: engine,
+		corn:      cron,
 	}
 	return app
 }
 
 // wire.go:
 
-var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger, ioc.InitConsumers, ioc.InitSaramaClient, ioc.InitWechatClient, ioc.InitWechatConfig, ioc.InitWechatNotifyHandler)
+var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger, ioc.InitConsumers, ioc.InitSaramaClient, ioc.InitWechatClient, ioc.InitWechatConfig, ioc.InitWechatNotifyHandler, ioc.InitJobs, ioc.InitSyncWechatOrderJob, ioc.InitRlockClient)
 
 var paymentSvcSet = wire.NewSet(dao.NewGormPaymentDao, cache.NewRedisPaymentCache, repository.NewNativePaymentRepository, ioc.InitWechatNativeService)

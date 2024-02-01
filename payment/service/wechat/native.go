@@ -51,6 +51,15 @@ func NewNativePaymentService(appID string,
 	}
 }
 
+// @func: Prepay
+// @date: 2024-02-02 02:57:55
+// @brief: 发送订单创建请求
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param pmt
+// @return string
+// @return error
 func (n *NativePaymentService) Prepay(ctx context.Context, pmt domain.Payment) (string, error) {
 
 	err := n.repo.CreatePayment(ctx, pmt)
@@ -74,6 +83,21 @@ func (n *NativePaymentService) Prepay(ctx context.Context, pmt domain.Payment) (
 		return "", err
 	}
 	return *resp.CodeUrl, nil
+}
+
+// @func: FindExpiredPayment
+// @date: 2024-02-02 02:54:50
+// @brief: 分批查询过期超时订单
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param beforeTime
+// @param offset
+// @param limit
+// @return []domain.Payment
+// @return error
+func (n *NativePaymentService) FindExpiredPayment(ctx context.Context, beforeTime time.Time, offset int, limit int) ([]domain.Payment, error) {
+	return n.repo.FindExpiredPayment(ctx, beforeTime, offset, limit)
 }
 
 func (n *NativePaymentService) HandleCallback(ctx context.Context, tnx *payments.Transaction) error {

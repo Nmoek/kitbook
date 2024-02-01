@@ -23,6 +23,10 @@ var thirdPartySet = wire.NewSet(
 	ioc.InitWechatClient,
 	ioc.InitWechatConfig,
 	ioc.InitWechatNotifyHandler,
+
+	ioc.InitJobs,
+	ioc.InitSyncWechatOrderJob,
+	ioc.InitRlockClient,
 	//InitSyncProducer,
 	//InitConsumers,
 )
