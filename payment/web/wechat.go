@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wechatpay-apiv3/wechatpay-go/core/notify"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/payments"
+	rewardv1 "kitbook/api/proto/gen/reward/v1"
 	"kitbook/payment/service/wechat"
 	"kitbook/pkg/logger"
 	"net/http"
@@ -12,8 +13,10 @@ import (
 type WeChatNativeHandler struct {
 	handler *notify.Handler
 
-	svc *wechat.NativePaymentService
-	l   logger.Logger
+	svc       *wechat.NativePaymentService
+	rewardSvc rewardv1.RewardServiceClient
+
+	l logger.Logger
 }
 
 func (w *WeChatNativeHandler) RegisterRoutes(server *gin.Engine) {
@@ -48,6 +51,9 @@ func (w *WeChatNativeHandler) HandleNative(ctx *gin.Context) {
 			logger.Field{"biz_trade_no", transaction.OutTradeNo})
 		ctx.String(http.StatusInternalServerError, "系统异常")
 	}
+
+	//TODO: 如何更新状态？？？？
+	// 利用消息队列
 
 	ctx.String(http.StatusOK, "处理完毕")
 }

@@ -19,14 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	PaymentService_Prepay_FullMethodName = "/pay.v1.PaymentService/Prepay"
+	PaymentService_PrePay_FullMethodName     = "/pay.v1.PaymentService/PrePay"
+	PaymentService_GetPayment_FullMethodName = "/pay.v1.PaymentService/GetPayment"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
-	Prepay(ctx context.Context, in *PrepayRequest, opts ...grpc.CallOption) (*PrepayResponse, error)
+	PrePay(ctx context.Context, in *PrepayRequest, opts ...grpc.CallOption) (*PrepayResponse, error)
+	GetPayment(ctx context.Context, in *GetPaymentRequest, opts ...grpc.CallOption) (*GetPaymentResponse, error)
 }
 
 type paymentServiceClient struct {
@@ -37,9 +39,18 @@ func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
 }
 
-func (c *paymentServiceClient) Prepay(ctx context.Context, in *PrepayRequest, opts ...grpc.CallOption) (*PrepayResponse, error) {
+func (c *paymentServiceClient) PrePay(ctx context.Context, in *PrepayRequest, opts ...grpc.CallOption) (*PrepayResponse, error) {
 	out := new(PrepayResponse)
-	err := c.cc.Invoke(ctx, PaymentService_Prepay_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, PaymentService_PrePay_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) GetPayment(ctx context.Context, in *GetPaymentRequest, opts ...grpc.CallOption) (*GetPaymentResponse, error) {
+	out := new(GetPaymentResponse)
+	err := c.cc.Invoke(ctx, PaymentService_GetPayment_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +61,8 @@ func (c *paymentServiceClient) Prepay(ctx context.Context, in *PrepayRequest, op
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility
 type PaymentServiceServer interface {
-	Prepay(context.Context, *PrepayRequest) (*PrepayResponse, error)
+	PrePay(context.Context, *PrepayRequest) (*PrepayResponse, error)
+	GetPayment(context.Context, *GetPaymentRequest) (*GetPaymentResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -58,8 +70,11 @@ type PaymentServiceServer interface {
 type UnimplementedPaymentServiceServer struct {
 }
 
-func (UnimplementedPaymentServiceServer) Prepay(context.Context, *PrepayRequest) (*PrepayResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Prepay not implemented")
+func (UnimplementedPaymentServiceServer) PrePay(context.Context, *PrepayRequest) (*PrepayResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrePay not implemented")
+}
+func (UnimplementedPaymentServiceServer) GetPayment(context.Context, *GetPaymentRequest) (*GetPaymentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPayment not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 
@@ -74,20 +89,38 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 	s.RegisterService(&PaymentService_ServiceDesc, srv)
 }
 
-func _PaymentService_Prepay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PaymentService_PrePay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PrepayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaymentServiceServer).Prepay(ctx, in)
+		return srv.(PaymentServiceServer).PrePay(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaymentService_Prepay_FullMethodName,
+		FullMethod: PaymentService_PrePay_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).Prepay(ctx, req.(*PrepayRequest))
+		return srv.(PaymentServiceServer).PrePay(ctx, req.(*PrepayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_GetPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).GetPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_GetPayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).GetPayment(ctx, req.(*GetPaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -100,8 +133,12 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PaymentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Prepay",
-			Handler:    _PaymentService_Prepay_Handler,
+			MethodName: "PrePay",
+			Handler:    _PaymentService_PrePay_Handler,
+		},
+		{
+			MethodName: "GetPayment",
+			Handler:    _PaymentService_GetPayment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

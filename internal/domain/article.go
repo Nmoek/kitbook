@@ -17,6 +17,12 @@ type Author struct {
 	Name string
 }
 
+// 打赏返回的付款码
+type CodeURL struct {
+	Rid int64
+	URL string
+}
+
 // 截取摘要的最大长度
 const abstractMaxLen = 256
 

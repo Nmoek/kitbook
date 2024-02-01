@@ -4,11 +4,13 @@ import (
 	"context"
 	"kitbook/payment/domain"
 	"kitbook/payment/repository/dao"
+	"time"
 )
 
 type PaymentRepository interface {
 	CreatePayment(ctx context.Context, pmt domain.Payment) error
 	UpdatePayment(ctx context.Context, pmt domain.Payment) error
+	FindExpiredPayment(ctx context.Context, beforeTime time.Time, offset int, limit int) ([]domain.Payment, error)
 }
 
 type NativePaymentRepository struct {
@@ -27,6 +29,19 @@ func (n *NativePaymentRepository) CreatePayment(ctx context.Context, pmt domain.
 
 func (n *NativePaymentRepository) UpdatePayment(ctx context.Context, pmt domain.Payment) error {
 	return n.dao.Update(ctx, pmt.BizTradeNO, pmt.TxnID, pmt.Status.AstoUint8())
+}
+
+func (n *NativePaymentRepository) FindExpiredPayment(ctx context.Context, beforeTime time.Time, offset int, limit int) ([]domain.Payment, error) {
+	pmtsDao, err := n.dao.FindExpiredPayment(ctx, beforeTime, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	pmts := make([]domain.Payment, len(pmtsDao))
+	for i, p := range pmtsDao {
+		pmts[i] = n.ConvertsPaymentDomain(&p)
+	}
+	return pmts, nil
 }
 
 func (n *NativePaymentRepository) ConvertsPaymentDomain(pmt *dao.Payment) domain.Payment {

@@ -6,20 +6,44 @@ option go_package = "pay/v1;payv1";
 
 
 service PaymentService {
-  rpc Prepay(PrepayRequest) returns(PrepayResponse);
-
+  rpc PrePay(PrepayRequest) returns(PrepayResponse);
+  rpc GetPayment(GetPaymentRequest) returns(GetPaymentResponse);
 }
 
+
+enum Status {
+  PaymentStatusUnknown = 0;
+  // 扫码但还未支付
+  PaymentStatusInit = 1;
+  // 支付成功
+  PaymentStatusSuccess = 2;
+  // 支付失败
+  PaymentStatusFail = 3;
+  // 退款中
+  PaymentStatusRefund = 4;
+}
+
+message Amt {
+  int64 total = 1;
+  string currency = 2;
+
+}
 message PrepayRequest {
   string biz_trade_no = 1;
   string description =2;
-  int64 total = 3;
-  string currency = 4;
-  uint32 status = 5;
-  string txn_id   = 6;
+  Amt amt = 3;
+  uint32 status = 4;
+  string txn_id   = 5;
 
 }
 
 message PrepayResponse {
   string code_url = 1;
+}
+
+message GetPaymentRequest {
+  string biz_trade_no = 1;
+}
+message GetPaymentResponse {
+  Status status = 1;
 }

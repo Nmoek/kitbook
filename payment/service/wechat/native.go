@@ -8,6 +8,7 @@ import (
 	"github.com/wechatpay-apiv3/wechatpay-go/services/payments"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/payments/native"
 	"kitbook/payment/domain"
+	"kitbook/payment/events"
 	"kitbook/payment/repository"
 	"kitbook/pkg/logger"
 	"time"
@@ -20,9 +21,9 @@ type NativePaymentService struct {
 	mchID     string
 	notifyURL string
 
-	repo repository.PaymentRepository
-
-	svc *native.NativeApiService
+	repo     repository.PaymentRepository
+	svc      *native.NativeApiService
+	producer events.Producer
 
 	nativeCBTypeToStatus map[string]domain.PaymentStatus
 	l                    logger.Logger
@@ -32,6 +33,7 @@ func NewNativePaymentService(appID string,
 	mchID string,
 	repo repository.PaymentRepository,
 	svc *native.NativeApiService,
+	producer events.Producer,
 	l logger.Logger) *NativePaymentService {
 	return &NativePaymentService{
 		appID:     appID,
@@ -39,6 +41,7 @@ func NewNativePaymentService(appID string,
 		notifyURL: "http://xxxx.com/pay/callback/",
 		repo:      repo,
 		svc:       svc,
+		producer:  producer,
 		nativeCBTypeToStatus: map[string]domain.PaymentStatus{
 			"NOPAY":    domain.PaymentStatusInit,
 			"SUCCESS":  domain.PaymentStatusSuccess,
@@ -51,12 +54,24 @@ func NewNativePaymentService(appID string,
 	}
 }
 
-func (n *NativePaymentService) Prepay(ctx context.Context, pmt domain.Payment) (string, error) {
+// @func: PrePay
+// @date: 2024-02-02 02:57:55
+// @brief: 发送订单创建请求
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param pmt
+// @return string
+// @return error
+func (n *NativePaymentService) PrePay(ctx context.Context, pmt domain.Payment) (string, error) {
 
+	// 创建订单记录
 	err := n.repo.CreatePayment(ctx, pmt)
 	if err != nil {
 		return "", err
 	}
+
+	// 调用微信native API
 	resp, _, err := n.svc.Prepay(ctx, native.PrepayRequest{
 		Appid:       core.String(n.appID),
 		Mchid:       core.String(n.mchID),
@@ -76,16 +91,31 @@ func (n *NativePaymentService) Prepay(ctx context.Context, pmt domain.Payment) (
 	return *resp.CodeUrl, nil
 }
 
-func (n *NativePaymentService) HandleCallback(ctx context.Context, tnx *payments.Transaction) error {
-	status, ok := n.nativeCBTypeToStatus[*tnx.TradeState]
-	if !ok {
-		return fmt.Errorf("%w， 微信状态: %s", errUnknownTransactionState, tnx.TradeState)
-	}
-	return n.repo.UpdatePayment(ctx, domain.Payment{
-		TxnID:      *tnx.TransactionId,
-		BizTradeNO: *tnx.OutTradeNo,
-		Status:     status,
-	})
+// @func: FindExpiredPayment
+// @date: 2024-02-02 02:54:50
+// @brief: 分批查询过期超时订单
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param beforeTime
+// @param offset
+// @param limit
+// @return []domain.Payment
+// @return error
+func (n *NativePaymentService) FindExpiredPayment(ctx context.Context, beforeTime time.Time, offset int, limit int) ([]domain.Payment, error) {
+	return n.repo.FindExpiredPayment(ctx, beforeTime, offset, limit)
+}
+
+// @func: HandleCallback
+// @date: 2024-02-02 02:54:50
+// @brief: 处理支付通知回调
+// @author: Kewin Li
+// @receiver n
+// @param ctx
+// @param tnx
+// @return error
+func (n *NativePaymentService) HandleCallback(ctx context.Context, txn *payments.Transaction) error {
+	return n.updateByTxn(ctx, txn)
 }
 
 // @func: SyncWechatInfo
@@ -117,5 +147,35 @@ func (n *NativePaymentService) SyncWechatInfo(ctx context.Context, bizTradeNO st
 // @param txn
 // @return error
 func (n *NativePaymentService) updateByTxn(ctx context.Context, txn *payments.Transaction) error {
-	return n.HandleCallback(ctx, txn)
+	status, ok := n.nativeCBTypeToStatus[*txn.TradeState]
+	if !ok {
+		return fmt.Errorf("%w, 微信状态: %s \n", errUnknownTransactionState, txn.TradeState)
+	}
+
+	err := n.repo.UpdatePayment(ctx, domain.Payment{
+		TxnID:      *txn.TransactionId,
+		BizTradeNO: *txn.OutTradeNo,
+		Status:     status,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 消息队列 向打赏模块发送消息
+	err = n.producer.ProducePaymentEvent(ctx, events.PaymentEvent{
+		BizTradeNO: *txn.OutTradeNo,
+		Status:     status.AstoUint8(),
+	})
+	//TODO: 消息发送失败怎么办？ 部分失败问题
+	// 至少发送成功一次。重复消息怎么处理？
+
+	if err != nil {
+		n.l.ERROR("支付事件消息发送失败",
+			logger.Error(err),
+			logger.Field{"biz_trade_no", *txn.OutTradeNo},
+			logger.Field{"txn_status", *txn.TradeState},
+			logger.Int[uint8]("status", status.AstoUint8()))
+	}
+
+	return nil
 }

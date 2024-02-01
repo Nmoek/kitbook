@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package reward.v1;
+option go_package = "reward/v1;rewardv1";
+
+
+service RewardService {
+  rpc PreReward(PreRewardRequest) returns(PreRewardResponse);
+  rpc UpdateStatus(UpdateStatusRequest) returns(UpdateStatusResponse);
+  rpc GetReward(GetRewardRequest) returns(GetRewardResponse);
+
+
+}
+
+enum RewardStatus {
+  RewardStatusUnknown = 0;
+  RewardStatusInit = 1;
+  RewardStatusPayed = 2;
+  RewardStatusFailed = 3;
+
+
+
+}
+
+message PreRewardRequest {
+  // 打赏什么东西
+  string biz = 1;
+  int64 biz_id = 2;
+  // 打赏描述
+  string biz_name = 3;
+  // 被打赏人(收款人)
+  int64 target_uid = 4;
+  // 打赏人(支付人)
+  int64 uid = 5;
+  // 打赏金额
+  int64 amt = 6;
+
+}
+
+message PreRewardResponse {
+  string code_url = 1;
+  // 代表这一次打赏的ID
+  int64 rid = 2;
+}
+
+message UpdateStatusRequest{
+  string biz_trade_no = 1;
+  uint32 status = 2;
+}
+
+message UpdateStatusResponse{
+
+}
+
+message GetRewardRequest {
+  int64 rid = 1;
+  int64 uid = 2;
+}
+
+message GetRewardResponse {
+
+}

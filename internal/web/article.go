@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
 	intrv1 "kitbook/api/proto/gen/intr/v1"
+	rewardv1 "kitbook/api/proto/gen/reward/v1"
 	"kitbook/internal/domain"
 	"kitbook/internal/service"
 	ijwt "kitbook/internal/web/jwt"
@@ -18,17 +19,19 @@ import (
 type ArticleHandler struct {
 	svc            service.ArticleService
 	interactiveSvc intrv1.InteractiveServiceClient
-
-	l   logger.Logger
-	biz string
+	rewardSvc      rewardv1.RewardServiceClient
+	l              logger.Logger
+	biz            string
 }
 
 func NewArticleHandler(svc service.ArticleService,
 	interactiveSvc intrv1.InteractiveServiceClient,
+	rewardSvc rewardv1.RewardServiceClient,
 	l logger.Logger) *ArticleHandler {
 	return &ArticleHandler{
 		svc:            svc,
 		interactiveSvc: interactiveSvc,
+		rewardSvc:      rewardSvc,
 		l:              l,
 		biz:            "article", // 业务标识
 	}
@@ -59,6 +62,9 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 	// 收藏接口
 	pub.POST("/collect", a.Collect)
+
+	// 打赏接口
+	pub.POST("/reward", a.Reward)
 
 }
 
@@ -687,4 +693,60 @@ ERR:
 			Add(logger.Int[int64]("userId", claims.UserID))...)
 
 	return
+}
+
+// @func: Reward
+// @date: 2024-02-03 21:26:32
+// @brief: 帖子打赏
+// @author: Kewin Li
+// @receiver a
+// @param context
+func (a *ArticleHandler) Reward(ctx *gin.Context) {
+	type RewardReq struct {
+		// 帖子ID
+		Id int64 `json:"id"`
+		// 打赏金额
+		Amt int64 `json:"amt"`
+	}
+
+	var req RewardReq
+	var err error
+	var claims ijwt.UserClaims
+	//logKey := logger.ArticleLogMsgKey[logger.LOG_ART_COLLECT]
+	fields := logger.Fields{}
+
+	err = ctx.Bind(&req)
+	if err != nil {
+		fields = fields.Add(logger.String("请求参数解析错误"))
+		return
+	}
+
+	claims = ctx.MustGet("user_token").(ijwt.UserClaims)
+
+	// 查询文章详情
+	art, err := a.svc.GetById(ctx, req.Id)
+	if err != nil {
+		return
+	}
+
+	resp, err := a.rewardSvc.PreReward(ctx, &rewardv1.PreRewardRequest{
+		BizId:     req.Id,
+		Biz:       "article",
+		BizName:   art.Title,
+		TargetUid: art.Author.Id,
+		Uid:       claims.UserID,
+		Amt:       req.Amt,
+	})
+	if err != nil {
+		return
+	}
+
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "打赏成功",
+		Data: domain.CodeURL{
+			Rid: resp.Rid,
+			URL: resp.CodeUrl,
+		},
+	})
+
 }
