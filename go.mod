@@ -28,6 +28,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.817
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.817
+	github.com/wechatpay-apiv3/wechatpay-go v0.2.18
 	go.etcd.io/etcd/client/v3 v3.5.10
 	go.mongodb.org/mongo-driver v1.13.1
 	go.opentelemetry.io/otel v1.21.0

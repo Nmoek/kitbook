@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+
+package pay.v1;
+option go_package = "pay/v1;payv1";
+
+
+service PaymentService {
+  rpc Prepay(PrepayRequest) returns(PrepayResponse);
+
+}
+
+message PrepayRequest {
+  string biz_trade_no = 1;
+  string description =2;
+  int64 total = 3;
+  string currency = 4;
+  uint32 status = 5;
+  string txn_id   = 6;
+
+}
+
+message PrepayResponse {
+  string code_url = 1;
+}
