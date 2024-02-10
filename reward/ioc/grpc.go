@@ -3,12 +3,12 @@ package ioc
 import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	grpc2 "kitbook/payment/grpc"
 	"kitbook/pkg/grpcx"
 	"kitbook/pkg/logger"
+	grpc2 "kitbook/reward/grpc"
 )
 
-func InitGRpcServer(paySvc *grpc2.NativePaymentServiceServer, l logger.Logger) *grpcx.Server {
+func InitGRpcServer(rewardSvc *grpc2.RewardServiceServer, l logger.Logger) *grpcx.Server {
 	type Config struct {
 		EtcdAddr string `yaml:"etcd_addr"`
 		Port     int    `yaml:"port"`
@@ -22,7 +22,7 @@ func InitGRpcServer(paySvc *grpc2.NativePaymentServiceServer, l logger.Logger) *
 	}
 
 	s := grpc.NewServer()
-	paySvc.Register(s)
+	rewardSvc.Register(s)
 	return &grpcx.Server{
 		Server:   s,
 		EtcdAddr: cfg.EtcdAddr,

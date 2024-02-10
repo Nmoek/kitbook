@@ -20,13 +20,6 @@ func main() {
 		<-app.corn.Stop().Done()
 	}()
 
-	for _, c := range app.consumers {
-		err := c.Start()
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	app.rpcServer.Serve()
 
 }

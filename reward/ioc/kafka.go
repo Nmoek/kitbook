@@ -4,7 +4,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/spf13/viper"
 	"kitbook/internal/events"
-	events2 "kitbook/payment/events"
+	events2 "kitbook/reward/events"
 )
 
 func InitSaramaClient() sarama.Client {
@@ -31,7 +31,7 @@ func InitSaramaClient() sarama.Client {
 }
 
 // 注意： wire没有办法找到所有同类实现
-func InitConsumers(c *events2.PaymentReadEventConsumer) []events.Consumer {
+func InitConsumers(c *events2.PaymentEventConsumer) []events.Consumer {
 
 	return []events.Consumer{c}
 

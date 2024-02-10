@@ -17,7 +17,6 @@ var thirdPartySet = wire.NewSet(
 	ioc.InitDB,
 	ioc.InitRedis,
 	ioc.InitLogger,
-	ioc.InitConsumers,
 	ioc.InitSaramaClient,
 
 	ioc.InitWechatClient,
@@ -27,7 +26,7 @@ var thirdPartySet = wire.NewSet(
 	ioc.InitJobs,
 	ioc.InitSyncWechatOrderJob,
 	ioc.InitRlockClient,
-	//InitSyncProducer,
+	ioc.InitSyncProducer,
 	//InitConsumers,
 )
 
@@ -46,7 +45,7 @@ func InitApp() *App {
 		thirdPartySet,
 		paymentSvcSet,
 
-		events.NewPaymentReadEventConsumer,
+		events.NewSaramaSyncProducer,
 		grpc.NewPaymentServiceServer,
 		ioc.InitGRpcServer,
 		web.NewWeChatNativeHandler,

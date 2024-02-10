@@ -14,6 +14,12 @@ type SaramaSyncProducer struct {
 	producer sarama.SyncProducer
 }
 
+func NewSaramaSyncProducer(producer sarama.SyncProducer) *SaramaSyncProducer {
+	return &SaramaSyncProducer{
+		producer: producer,
+	}
+}
+
 func (s *SaramaSyncProducer) ProducePaymentEvent(ctx context.Context, event PaymentEvent) error {
 	val, err := json.Marshal(&event)
 	if err != nil {

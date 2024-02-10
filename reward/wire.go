@@ -4,13 +4,13 @@ package main
 
 import (
 	"github.com/google/wire"
-	"kitbook/payment/events"
-	"kitbook/payment/grpc"
-	"kitbook/payment/ioc"
-	"kitbook/payment/repository"
-	"kitbook/payment/repository/cache"
-	"kitbook/payment/repository/dao"
-	"kitbook/payment/web"
+	"kitbook/reward/events"
+	"kitbook/reward/grpc"
+	"kitbook/reward/ioc"
+	"kitbook/reward/repository"
+	"kitbook/reward/repository/cache"
+	"kitbook/reward/repository/dao"
+	"kitbook/reward/service"
 )
 
 var thirdPartySet = wire.NewSet(
@@ -19,24 +19,19 @@ var thirdPartySet = wire.NewSet(
 	ioc.InitLogger,
 	ioc.InitConsumers,
 	ioc.InitSaramaClient,
+	ioc.InitEtcd,
 
-	ioc.InitWechatClient,
-	ioc.InitWechatConfig,
-	ioc.InitWechatNotifyHandler,
-
-	ioc.InitJobs,
-	ioc.InitSyncWechatOrderJob,
-	ioc.InitRlockClient,
-	//InitSyncProducer,
-	//InitConsumers,
+	// payment远程调用客户端
+	ioc.InitPaymentClient,
+	// account远程调用客户端
+	ioc.InitAccountClient,
 )
 
-var paymentSvcSet = wire.NewSet(
-	dao.NewGormPaymentDao,
-	cache.NewRedisPaymentCache,
-	repository.NewNativePaymentRepository,
-	ioc.InitWechatNativeService,
-	//wechat.NewNativePaymentService,
+var rewardSvcSet = wire.NewSet(
+	dao.NewGormRewardDao,
+	cache.NewRedisRewardCache,
+	repository.NewWechatNativeRewardRepository,
+	service.NewWechatNativeRewardService,
 )
 
 func InitApp() *App {
@@ -44,13 +39,11 @@ func InitApp() *App {
 	wire.Build(
 		// 第三方依赖
 		thirdPartySet,
-		paymentSvcSet,
+		rewardSvcSet,
 
-		events.NewPaymentReadEventConsumer,
-		grpc.NewPaymentServiceServer,
+		events.NewPaymentEventConsumer,
+		grpc.NewRewardServiceServer,
 		ioc.InitGRpcServer,
-		web.NewWeChatNativeHandler,
-		ioc.InitWebServer,
 
 		wire.Struct(new(App), "*"),
 	)

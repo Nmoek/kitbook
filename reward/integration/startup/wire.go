@@ -4,51 +4,37 @@ package startup
 
 import (
 	"github.com/google/wire"
-	"kitbook/payment/grpc"
-	"kitbook/payment/repository"
-	"kitbook/payment/repository/cache"
-	"kitbook/payment/repository/dao"
+	"kitbook/reward/grpc"
+	"kitbook/reward/repository"
+	"kitbook/reward/repository/cache"
+	"kitbook/reward/repository/dao"
+	"kitbook/reward/service"
 )
 
 var thirdPartySet = wire.NewSet(
 	InitDB,
 	InitRedis,
 	InitLogger,
+	InitEtcd,
+	InitPaymentClient,
+	InitAccountClient,
 	//InitSaramaClient,
 	//InitSyncProducer,
 	//InitConsumers,
 )
 
-var paymentSvcSet = wire.NewSet(
-	dao.NewGormPaymentDao,
-	cache.NewRedisPaymentCache,
-	repository.NewNativePaymentRepository,
-
-	//wechat.NewNativePaymentService,
+var rewardSvcSet = wire.NewSet(
+	dao.NewGormRewardDao,
+	cache.NewRedisRewardCache,
+	repository.NewWechatNativeRewardRepository,
+	service.NewWechatNativeRewardService,
 )
 
-func NewPaymentServiceServer() *grpc.NewPaymentServiceServer {
+func NewRewardServiceServer() *grpc.RewardServiceServer {
 	wire.Build(
 		thirdPartySet,
-		paymentSvcSet,
-		grpc.NewPaymentServiceServer,
+		rewardSvcSet,
+		grpc.NewRewardServiceServer,
 	)
-	return new(grpc.NewPaymentServiceServer)
-}
-
-func InitApp() *App {
-
-	wire.Build(
-		// 第三方依赖
-		thirdPartySet,
-		paymentSvcSet,
-
-		events.NewPaymentReadEventConsumer,
-		grpc.NewPaymentServiceServer,
-		ioc.InitGRpcServer,
-
-		wire.Struct(new(App), "*"),
-	)
-
-	return new(App)
+	return new(grpc.RewardServiceServer)
 }

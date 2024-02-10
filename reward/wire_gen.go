@@ -8,13 +8,13 @@ package main
 
 import (
 	"github.com/google/wire"
-	"kitbook/payment/events"
-	"kitbook/payment/grpc"
-	"kitbook/payment/ioc"
-	"kitbook/payment/repository"
-	"kitbook/payment/repository/cache"
-	"kitbook/payment/repository/dao"
-	"kitbook/payment/web"
+	"kitbook/reward/events"
+	"kitbook/reward/grpc"
+	"kitbook/reward/ioc"
+	"kitbook/reward/repository"
+	"kitbook/reward/repository/cache"
+	"kitbook/reward/repository/dao"
+	"kitbook/reward/service"
 )
 
 // Injectors from wire.go:
@@ -22,34 +22,28 @@ import (
 func InitApp() *App {
 	logger := ioc.InitLogger()
 	db := ioc.InitDB(logger)
-	paymentDao := dao.NewGormPaymentDao(db)
-	paymentRepository := repository.NewNativePaymentRepository(paymentDao)
-	client := ioc.InitSaramaClient()
-	paymentReadEventConsumer := events.NewPaymentReadEventConsumer(paymentRepository, client, logger)
-	v := ioc.InitConsumers(paymentReadEventConsumer)
-	wechatConfig := ioc.InitWechatConfig()
-	coreClient := ioc.InitWechatClient(wechatConfig)
-	nativePaymentService := ioc.InitWechatNativeService(coreClient, paymentRepository, logger, wechatConfig)
-	paymentServiceServer := grpc.NewPaymentServiceServer(nativePaymentService)
-	server := ioc.InitGRpcServer(paymentServiceServer, logger)
-	handler := ioc.InitWechatNotifyHandler(wechatConfig)
-	weChatNativeHandler := web.NewWeChatNativeHandler(handler, nativePaymentService, logger)
-	engine := ioc.InitWebServer(weChatNativeHandler)
+	rewardDao := dao.NewGormRewardDao(db)
 	cmdable := ioc.InitRedis()
-	rlockClient := ioc.InitRlockClient(cmdable)
-	syncWechatOrderJob := ioc.InitSyncWechatOrderJob(nativePaymentService, rlockClient, logger)
-	cron := ioc.InitJobs(logger, syncWechatOrderJob)
+	rewardCache := cache.NewRedisRewardCache(cmdable)
+	rewardRepository := repository.NewWechatNativeRewardRepository(rewardDao, rewardCache)
+	client := ioc.InitEtcd()
+	paymentServiceClient := ioc.InitPaymentClient(client)
+	accountServiceClient := ioc.InitAccountClient(client)
+	rewardService := service.NewWechatNativeRewardService(rewardRepository, paymentServiceClient, accountServiceClient, logger)
+	saramaClient := ioc.InitSaramaClient()
+	paymentEventConsumer := events.NewPaymentEventConsumer(rewardService, saramaClient, logger)
+	v := ioc.InitConsumers(paymentEventConsumer)
+	rewardServiceServer := grpc.NewRewardServiceServer(rewardService)
+	server := ioc.InitGRpcServer(rewardServiceServer, logger)
 	app := &App{
 		consumers: v,
 		rpcServer: server,
-		webServer: engine,
-		corn:      cron,
 	}
 	return app
 }
 
 // wire.go:
 
-var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger, ioc.InitConsumers, ioc.InitSaramaClient, ioc.InitWechatClient, ioc.InitWechatConfig, ioc.InitWechatNotifyHandler, ioc.InitJobs, ioc.InitSyncWechatOrderJob, ioc.InitRlockClient)
+var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger, ioc.InitConsumers, ioc.InitSaramaClient, ioc.InitEtcd, ioc.InitPaymentClient, ioc.InitAccountClient)
 
-var paymentSvcSet = wire.NewSet(dao.NewGormPaymentDao, cache.NewRedisPaymentCache, repository.NewNativePaymentRepository, ioc.InitWechatNativeService)
+var rewardSvcSet = wire.NewSet(dao.NewGormRewardDao, cache.NewRedisRewardCache, repository.NewWechatNativeRewardRepository, service.NewWechatNativeRewardService)

@@ -33,7 +33,7 @@ func NewNativePaymentService(appID string,
 	mchID string,
 	repo repository.PaymentRepository,
 	svc *native.NativeApiService,
-	producer events.Producer,
+	producer *events.SaramaSyncProducer,
 	l logger.Logger) *NativePaymentService {
 	return &NativePaymentService{
 		appID:     appID,

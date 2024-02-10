@@ -12,6 +12,18 @@ kafka:
   addr:
     - "localhost:9094"
 
+etcd:
+  addrs:
+    - "localhost:2379"
+
 grpc:
   server:
-    addr: ":8090"
+    etcdAddr: "localhost:2379"
+    port: 8090
+    bizName: "reward"
+  client:
+    payment:
+      #      addr: "localhost:8090"
+      addr: "etcd:////service/payment"
+    account:
+      addr: "etcd:///service/account"

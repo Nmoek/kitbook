@@ -9,6 +9,7 @@ import (
 	"github.com/wechatpay-apiv3/wechatpay-go/core/option"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/payments/native"
 	"github.com/wechatpay-apiv3/wechatpay-go/utils"
+	"kitbook/payment/events"
 	"kitbook/payment/repository"
 	"kitbook/payment/service/wechat"
 	"kitbook/pkg/logger"
@@ -36,11 +37,15 @@ func InitWechatClient(cfg WechatConfig) *core.Client {
 
 func InitWechatNativeService(cli *core.Client,
 	repo repository.PaymentRepository,
+	producer *events.SaramaSyncProducer,
 	l logger.Logger,
 	cfg WechatConfig) *wechat.NativePaymentService {
-	return wechat.NewNativePaymentService(cfg.AppID, cfg.MchId, repo, &native.NativeApiService{
-		Client: cli,
-	}, l)
+	return wechat.NewNativePaymentService(
+		cfg.AppID, cfg.MchId, repo,
+		&native.NativeApiService{
+			Client: cli,
+		},
+		producer, l)
 }
 
 func InitWechatNotifyHandler(cfg WechatConfig) *notify.Handler {

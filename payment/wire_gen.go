@@ -20,18 +20,18 @@ import (
 // Injectors from wire.go:
 
 func InitApp() *App {
+	wechatConfig := ioc.InitWechatConfig()
+	client := ioc.InitWechatClient(wechatConfig)
 	logger := ioc.InitLogger()
 	db := ioc.InitDB(logger)
 	paymentDao := dao.NewGormPaymentDao(db)
 	paymentRepository := repository.NewNativePaymentRepository(paymentDao)
-	client := ioc.InitSaramaClient()
-	paymentReadEventConsumer := events.NewPaymentReadEventConsumer(paymentRepository, client, logger)
-	v := ioc.InitConsumers(paymentReadEventConsumer)
-	wechatConfig := ioc.InitWechatConfig()
-	coreClient := ioc.InitWechatClient(wechatConfig)
-	nativePaymentService := ioc.InitWechatNativeService(coreClient, paymentRepository, logger, wechatConfig)
-	paymentServiceServer := grpc.NewPaymentServiceServer(nativePaymentService)
-	server := ioc.InitGRpcServer(paymentServiceServer, logger)
+	saramaClient := ioc.InitSaramaClient()
+	syncProducer := ioc.InitSyncProducer(saramaClient)
+	saramaSyncProducer := events.NewSaramaSyncProducer(syncProducer)
+	nativePaymentService := ioc.InitWechatNativeService(client, paymentRepository, saramaSyncProducer, logger, wechatConfig)
+	nativePaymentServiceServer := grpc.NewPaymentServiceServer(nativePaymentService)
+	server := ioc.InitGRpcServer(nativePaymentServiceServer, logger)
 	handler := ioc.InitWechatNotifyHandler(wechatConfig)
 	weChatNativeHandler := web.NewWeChatNativeHandler(handler, nativePaymentService, logger)
 	engine := ioc.InitWebServer(weChatNativeHandler)
@@ -40,7 +40,6 @@ func InitApp() *App {
 	syncWechatOrderJob := ioc.InitSyncWechatOrderJob(nativePaymentService, rlockClient, logger)
 	cron := ioc.InitJobs(logger, syncWechatOrderJob)
 	app := &App{
-		consumers: v,
 		rpcServer: server,
 		webServer: engine,
 		corn:      cron,
@@ -50,6 +49,6 @@ func InitApp() *App {
 
 // wire.go:
 
-var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger, ioc.InitConsumers, ioc.InitSaramaClient, ioc.InitWechatClient, ioc.InitWechatConfig, ioc.InitWechatNotifyHandler, ioc.InitJobs, ioc.InitSyncWechatOrderJob, ioc.InitRlockClient)
+var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger, ioc.InitSaramaClient, ioc.InitWechatClient, ioc.InitWechatConfig, ioc.InitWechatNotifyHandler, ioc.InitJobs, ioc.InitSyncWechatOrderJob, ioc.InitRlockClient, ioc.InitSyncProducer)
 
 var paymentSvcSet = wire.NewSet(dao.NewGormPaymentDao, cache.NewRedisPaymentCache, repository.NewNativePaymentRepository, ioc.InitWechatNativeService)

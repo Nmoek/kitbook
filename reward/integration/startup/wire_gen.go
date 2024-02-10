@@ -8,25 +8,28 @@ package startup
 
 import (
 	"github.com/google/wire"
-	"kitbook/interactive/grpc"
-	"kitbook/interactive/repository"
-	"kitbook/interactive/repository/cache"
-	"kitbook/interactive/repository/dao"
-	"kitbook/interactive/service"
+	"kitbook/reward/grpc"
+	"kitbook/reward/repository"
+	"kitbook/reward/repository/cache"
+	"kitbook/reward/repository/dao"
+	"kitbook/reward/service"
 )
 
 // Injectors from wire.go:
 
-func NewInteractiveServer() *grpc.InteractiveServiceServer {
+func NewRewardServiceServer() *grpc.RewardServiceServer {
 	db := InitDB()
-	interactiveDao := dao.NewGORMInteractiveDao(db)
+	rewardDao := dao.NewGormRewardDao(db)
 	cmdable := InitRedis()
-	interactiveCache := cache.NewRedisInteractiveCache(cmdable)
+	rewardCache := cache.NewRedisRewardCache(cmdable)
+	rewardRepository := repository.NewWechatNativeRewardRepository(rewardDao, rewardCache)
+	client := InitEtcd()
+	paymentServiceClient := InitPaymentClient(client)
+	accountServiceClient := InitAccountClient(client)
 	logger := InitLogger()
-	interactiveRepository := repository.NewArticleInteractiveRepository(interactiveDao, interactiveCache, logger)
-	interactiveService := service.NewArticleInteractiveService(interactiveRepository, logger)
-	interactiveServiceServer := grpc.NewInteractiveServiceServer(interactiveService)
-	return interactiveServiceServer
+	rewardService := service.NewWechatNativeRewardService(rewardRepository, paymentServiceClient, accountServiceClient, logger)
+	rewardServiceServer := grpc.NewRewardServiceServer(rewardService)
+	return rewardServiceServer
 }
 
 // wire.go:
@@ -35,6 +38,9 @@ var thirdPartySet = wire.NewSet(
 	InitDB,
 	InitRedis,
 	InitLogger,
+	InitEtcd,
+	InitPaymentClient,
+	InitAccountClient,
 )
 
-var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDao, cache.NewRedisInteractiveCache, repository.NewArticleInteractiveRepository, service.NewArticleInteractiveService)
+var rewardSvcSet = wire.NewSet(dao.NewGormRewardDao, cache.NewRedisRewardCache, repository.NewWechatNativeRewardRepository, service.NewWechatNativeRewardService)

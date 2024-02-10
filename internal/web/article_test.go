@@ -135,7 +135,7 @@ func TestArticleHandler_Publish(t *testing.T) {
 			defer ctrl.Finish()
 
 			svc := tc.mock(ctrl)
-			hdl := NewArticleHandler(svc, nil, logger.NewNopLogger())
+			hdl := NewArticleHandler(svc, nil, nil, logger.NewNopLogger())
 
 			server := gin.Default()
 			server.Use(func(ctx *gin.Context) {
@@ -310,7 +310,7 @@ func TestArticleHandler_List(t *testing.T) {
 
 			svc := tc.mock(ctrl)
 
-			hdl := NewArticleHandler(svc, nil, logger.NewNopLogger())
+			hdl := NewArticleHandler(svc, nil, nil, logger.NewNopLogger())
 			server := gin.Default()
 			server.Use(func(ctx *gin.Context) {
 				ctx.Set("user_token", ijwt.UserClaims{

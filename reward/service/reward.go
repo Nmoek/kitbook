@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	accountv1 "kitbook/api/proto/gen/account/v1"
 	payv1 "kitbook/api/proto/gen/pay/v1"
 	"kitbook/pkg/logger"
 	"kitbook/reward/domain"
@@ -15,8 +16,21 @@ import (
 type WechatNativeRewardService struct {
 	repo   repository.RewardRepository
 	payCli payv1.PaymentServiceClient
+	acClit accountv1.AccountServiceClient
 
 	l logger.Logger
+}
+
+func NewWechatNativeRewardService(repo repository.RewardRepository,
+	payCli payv1.PaymentServiceClient,
+	acClit accountv1.AccountServiceClient,
+	l logger.Logger) RewardService {
+	return &WechatNativeRewardService{
+		repo:   repo,
+		payCli: payCli,
+		acClit: acClit,
+		l:      l,
+	}
 }
 
 func (w *WechatNativeRewardService) PreReward(ctx context.Context, rwd domain.Reward) (domain.CodeURL, error) {
@@ -77,8 +91,52 @@ func (w *WechatNativeRewardService) PreReward(ctx context.Context, rwd domain.Re
 func (w *WechatNativeRewardService) UpdateStatus(ctx context.Context, bizTradeNO string, status domain.RewardStatus) error {
 
 	rid := w.parseRid(bizTradeNO)
+	err := w.repo.UpdateStatus(ctx, rid, status)
+	if err != nil {
+		return err
+	}
 
-	return w.repo.UpdateStatus(ctx, rid, status)
+	// 完成支付, 进行记账分账流程
+	if status == domain.RewardStatusPayed {
+
+		reward, err := w.repo.GetReward(ctx, rid)
+		if err != nil {
+			return err
+		}
+
+		// 平台10％的抽成比例
+		platformAmt := int64(float64(reward.Amt) * 0.1)
+
+		_, err = w.acClit.Credit(ctx, &accountv1.CreditRequest{
+			BizId: rid,
+			Biz:   "reward",
+			Items: []*accountv1.CreditItem{
+				{
+					AccountType: accountv1.AccountType_AccountTypeSystem,
+					Amt:         platformAmt,
+					Currency:    "CNY",
+				},
+				{
+					Account:     reward.Uid,
+					Uid:         reward.Uid,
+					AccountType: accountv1.AccountType_AccountTypeReward,
+					Amt:         reward.Amt - platformAmt,
+					Currency:    "CNY",
+				},
+			},
+		})
+		if err != nil {
+			w.l.ERROR("入账分账失败",
+				logger.Error(err),
+				logger.Field{"biz_id", rid},
+				logger.Field{"biz", "reward"},
+				logger.Int[int64]("total_amount", reward.Amt),
+				logger.Int[int64]("system_amount", platformAmt))
+		}
+
+	}
+
+	return nil
 }
 
 // @func: GetReward
@@ -137,6 +195,7 @@ func (w *WechatNativeRewardService) GetReward(ctx context.Context, rid int64, ui
 				logger.Error(err2),
 				logger.Int[int64]("rid", rid))
 		}
+
 	}
 
 	return res, nil
