@@ -1,0 +1,17 @@
+test:
+  key: "test"
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""
+
+db:
+  dsn: "root:root@tcp(127.0.0.1:13316)/kitbook?charset=utf8mb4&parseTime=True&loc=Local"
+
+kafka:
+  addr:
+    - "localhost:9094"
+
+grpc:
+  server:
+    addr: ":8090"
