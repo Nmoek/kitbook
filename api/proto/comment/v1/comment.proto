@@ -6,6 +6,7 @@ option go_package = "comment/v1;commentv1";
 service CommentService {
   rpc CreateComment(CreateCommentRequest) returns(CreateCommentResponse);
   rpc DeleteComment(DeleteCommentRequest) returns(DeleteCommentResponse);
+  rpc GetCommentList(GetCommentListRequest) returns(GetCommentListResponse);
 
 }
 
@@ -27,6 +28,17 @@ message DeleteCommentRequest{
 
 message DeleteCommentResponse{
 
+}
+
+message GetCommentListRequest{
+  int64 biz_id = 1;
+  string biz = 2;
+  int64 min_id = 3;
+  int64 limit = 4;
+}
+
+message GetCommentListResponse{
+  repeated Comment comments = 1;
 }
 
 

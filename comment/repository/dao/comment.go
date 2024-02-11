@@ -9,6 +9,8 @@ import (
 type CommentDao interface {
 	Insert(ctx context.Context, cmt Comment) error
 	Delete(ctx context.Context, cmt Comment) error
+	FindByBiz(ctx context.Context, bizId int64, biz string, minId int64, limit int64) ([]Comment, error)
+	FindRepliesByPid(ctx context.Context, pid int64, offset int64, limit int64) ([]Comment, error)
 }
 
 type GormCommentDao struct {
@@ -27,6 +29,47 @@ func (g *GormCommentDao) Delete(ctx context.Context, cmt Comment) error {
 	return g.db.WithContext(ctx).Delete(&Comment{
 		Id: cmt.Id,
 	}).Error
+}
+
+// @func: FindByBiz
+// @date: 2024-02-11 14:41:51
+// @brief: 查询一级评论
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param bizId
+// @param biz
+// @param minId
+// @param limit
+// @return []Comment
+// @return error
+func (g *GormCommentDao) FindByBiz(ctx context.Context, bizId int64, biz string, minId int64, limit int64) ([]Comment, error) {
+	var res []Comment
+	// 查出根结点
+	err := g.db.WithContext(ctx).
+		Where("biz_id = ? AND biz = ? AND id < ? AND pid IS NULL", bizId, biz, minId).
+		Find(&res).Error
+	return res, err
+}
+
+// @func: FindRepliesByPid
+// @date: 2024-02-11 14:42:00
+// @brief: 查询二级评论
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param pid
+// @param offset
+// @param limit
+// @return []Comment
+// @return error
+func (g *GormCommentDao) FindRepliesByPid(ctx context.Context, pid int64, offset int64, limit int64) ([]Comment, error) {
+	var res []Comment
+	err := g.db.WithContext(ctx).Where("pid = ?", pid).
+		Offset(int(offset)).
+		Limit(int(limit)).
+		Find(&res).Error
+	return res, err
 }
 
 // Comment

@@ -27,3 +27,7 @@ func (a *ArticleCommentService) CreateComment(ctx context.Context, cmt domain.Co
 func (a *ArticleCommentService) DeleteComment(ctx context.Context, id int64) error {
 	return a.repo.DeleteComment(ctx, id)
 }
+
+func (a *ArticleCommentService) GetCommentList(ctx context.Context, bizId int64, biz string, minId int64, limit int64) ([]domain.Comment, error) {
+	return a.repo.FindByBiz(ctx, bizId, biz, minId, limit)
+}
