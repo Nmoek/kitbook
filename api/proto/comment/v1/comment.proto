@@ -7,6 +7,7 @@ service CommentService {
   rpc CreateComment(CreateCommentRequest) returns(CreateCommentResponse);
   rpc DeleteComment(DeleteCommentRequest) returns(DeleteCommentResponse);
   rpc GetCommentList(GetCommentListRequest) returns(GetCommentListResponse);
+  rpc GetMoreReplies(GetMoreRepliesRequest) returns(GetMoreRepliesResponse);
 
 }
 
@@ -38,6 +39,16 @@ message GetCommentListRequest{
 }
 
 message GetCommentListResponse{
+  repeated Comment comments = 1;
+}
+
+message GetMoreRepliesRequest{
+  int64 root_id = 1;
+  int64 max_id = 2;
+  int64 limit = 3;
+}
+
+message GetMoreRepliesResponse{
   repeated Comment comments = 1;
 }
 

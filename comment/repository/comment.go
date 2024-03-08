@@ -13,6 +13,7 @@ type CommentRepository interface {
 	CreateComment(ctx context.Context, cmt domain.Comment) error
 	DeleteComment(ctx context.Context, id int64) error
 	FindByBiz(ctx context.Context, bizId int64, biz string, minId int64, limit int64) ([]domain.Comment, error)
+	FindMoreReplies(ctx context.Context, rootId int64, maxId int64, limit int64) ([]domain.Comment, error)
 }
 
 type ArticleCommentRepository struct {
@@ -84,6 +85,31 @@ func (a *ArticleCommentRepository) FindByBiz(ctx context.Context, bizId int64, b
 	}
 
 	return res, eg.Wait()
+
+}
+
+// @func: FindMoreReplies
+// @date: 2024-02-11 16:47:39
+// @brief: 加载更多二级评论
+// @author: Kewin Li
+// @receiver a
+// @param ctx
+// @param rootId
+// @param maxId
+// @param limit
+// @return []domain.Comment
+// @return error
+func (a *ArticleCommentRepository) FindMoreReplies(ctx context.Context, rootId int64, maxId int64, limit int64) ([]domain.Comment, error) {
+	cmtsDao, err := a.dao.FindRepliesByRid(ctx, rootId, maxId, limit)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]domain.Comment, 0, len(cmtsDao))
+	for _, cmt := range cmtsDao {
+		res = append(res, a.ConvertsCommentDomain(&cmt))
+	}
+
+	return res, nil
 
 }
 

@@ -11,6 +11,7 @@ type CommentDao interface {
 	Delete(ctx context.Context, cmt Comment) error
 	FindByBiz(ctx context.Context, bizId int64, biz string, minId int64, limit int64) ([]Comment, error)
 	FindRepliesByPid(ctx context.Context, pid int64, offset int64, limit int64) ([]Comment, error)
+	FindRepliesByRid(ctx context.Context, rootId int64, maxId int64, limit int64) ([]Comment, error)
 }
 
 type GormCommentDao struct {
@@ -65,8 +66,32 @@ func (g *GormCommentDao) FindByBiz(ctx context.Context, bizId int64, biz string,
 // @return error
 func (g *GormCommentDao) FindRepliesByPid(ctx context.Context, pid int64, offset int64, limit int64) ([]Comment, error) {
 	var res []Comment
+	// 二级评论 先加载评论时间最新的
 	err := g.db.WithContext(ctx).Where("pid = ?", pid).
+		Order("id DECRE").
 		Offset(int(offset)).
+		Limit(int(limit)).
+		Find(&res).Error
+	return res, err
+}
+
+// @func: FindRepliesByRid
+// @date: 2024-02-11 16:47:23
+// @brief: 加载更多二级评论
+// @author: Kewin Li
+// @receiver g
+// @param ctx
+// @param rootId
+// @param maxId
+// @param limit
+// @return []Comment
+// @return error
+func (g *GormCommentDao) FindRepliesByRid(ctx context.Context, rootId int64, maxId int64, limit int64) ([]Comment, error) {
+	var res []Comment
+
+	err := g.db.WithContext(ctx).
+		Where("root_id = ? AND id > ?", rootId, maxId).
+		Order("id").
 		Limit(int(limit)).
 		Find(&res).Error
 	return res, err

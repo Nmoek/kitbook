@@ -31,3 +31,7 @@ func (a *ArticleCommentService) DeleteComment(ctx context.Context, id int64) err
 func (a *ArticleCommentService) GetCommentList(ctx context.Context, bizId int64, biz string, minId int64, limit int64) ([]domain.Comment, error) {
 	return a.repo.FindByBiz(ctx, bizId, biz, minId, limit)
 }
+
+func (a *ArticleCommentService) GetMoreReplies(ctx context.Context, rootId int64, maxId int64, limit int64) ([]domain.Comment, error) {
+	return a.repo.FindMoreReplies(ctx, rootId, maxId, limit)
+}

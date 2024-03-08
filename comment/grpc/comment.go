@@ -90,6 +90,24 @@ func (a *ArticleCommentServiceServer) GetCommentList(ctx context.Context, reques
 
 }
 
+func (a *ArticleCommentServiceServer) GetMoreReplies(ctx context.Context, request *commentv1.GetMoreRepliesRequest) (*commentv1.GetMoreRepliesResponse, error) {
+	maxId := request.GetMaxId()
+	if maxId <= 0 {
+		maxId = math.MinInt64
+	}
+	cmtsDomain, err := a.svc.GetMoreReplies(ctx,
+		request.GetRootId(),
+		maxId,
+		request.GetLimit())
+	if err != nil {
+		return nil, err
+	}
+
+	return &commentv1.GetMoreRepliesResponse{
+		Comments: a.toDTOs(cmtsDomain),
+	}, nil
+}
+
 func (a *ArticleCommentServiceServer) toDomain(cmt *commentv1.Comment) domain.Comment {
 	return domain.Comment{}
 }

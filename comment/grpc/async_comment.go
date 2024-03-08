@@ -78,3 +78,12 @@ func (a *AsyncCommentService) GetCommentListV1(ctx context.Context, request *com
 
 	return a.ArticleCommentServiceServer.GetCommentList(ctx, request)
 }
+
+func (a *AsyncCommentService) GetMoreReplies(ctx context.Context, request *commentv1.GetMoreRepliesRequest) (*commentv1.GetMoreRepliesResponse, error) {
+	// 触发限流或降级 直接关闭功能
+	if ctx.Value("limited") == "true" || ctx.Value("downgrade") == "true" {
+		return &commentv1.GetMoreRepliesResponse{}, errors.New("资源不足, 功能降级")
+	}
+
+	return a.ArticleCommentServiceServer.GetMoreReplies(ctx, request)
+}

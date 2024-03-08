@@ -22,6 +22,7 @@ const (
 	CommentService_CreateComment_FullMethodName  = "/comment.v1.CommentService/CreateComment"
 	CommentService_DeleteComment_FullMethodName  = "/comment.v1.CommentService/DeleteComment"
 	CommentService_GetCommentList_FullMethodName = "/comment.v1.CommentService/GetCommentList"
+	CommentService_GetMoreReplies_FullMethodName = "/comment.v1.CommentService/GetMoreReplies"
 )
 
 // CommentServiceClient is the client API for CommentService service.
@@ -31,6 +32,7 @@ type CommentServiceClient interface {
 	CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*CreateCommentResponse, error)
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentResponse, error)
 	GetCommentList(ctx context.Context, in *GetCommentListRequest, opts ...grpc.CallOption) (*GetCommentListResponse, error)
+	GetMoreReplies(ctx context.Context, in *GetMoreRepliesRequest, opts ...grpc.CallOption) (*GetMoreRepliesResponse, error)
 }
 
 type commentServiceClient struct {
@@ -68,6 +70,15 @@ func (c *commentServiceClient) GetCommentList(ctx context.Context, in *GetCommen
 	return out, nil
 }
 
+func (c *commentServiceClient) GetMoreReplies(ctx context.Context, in *GetMoreRepliesRequest, opts ...grpc.CallOption) (*GetMoreRepliesResponse, error) {
+	out := new(GetMoreRepliesResponse)
+	err := c.cc.Invoke(ctx, CommentService_GetMoreReplies_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CommentServiceServer is the server API for CommentService service.
 // All implementations must embed UnimplementedCommentServiceServer
 // for forward compatibility
@@ -75,6 +86,7 @@ type CommentServiceServer interface {
 	CreateComment(context.Context, *CreateCommentRequest) (*CreateCommentResponse, error)
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error)
 	GetCommentList(context.Context, *GetCommentListRequest) (*GetCommentListResponse, error)
+	GetMoreReplies(context.Context, *GetMoreRepliesRequest) (*GetMoreRepliesResponse, error)
 	mustEmbedUnimplementedCommentServiceServer()
 }
 
@@ -90,6 +102,9 @@ func (UnimplementedCommentServiceServer) DeleteComment(context.Context, *DeleteC
 }
 func (UnimplementedCommentServiceServer) GetCommentList(context.Context, *GetCommentListRequest) (*GetCommentListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCommentList not implemented")
+}
+func (UnimplementedCommentServiceServer) GetMoreReplies(context.Context, *GetMoreRepliesRequest) (*GetMoreRepliesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMoreReplies not implemented")
 }
 func (UnimplementedCommentServiceServer) mustEmbedUnimplementedCommentServiceServer() {}
 
@@ -158,6 +173,24 @@ func _CommentService_GetCommentList_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommentService_GetMoreReplies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMoreRepliesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommentServiceServer).GetMoreReplies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CommentService_GetMoreReplies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommentServiceServer).GetMoreReplies(ctx, req.(*GetMoreRepliesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CommentService_ServiceDesc is the grpc.ServiceDesc for CommentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -176,6 +209,10 @@ var CommentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCommentList",
 			Handler:    _CommentService_GetCommentList_Handler,
+		},
+		{
+			MethodName: "GetMoreReplies",
+			Handler:    _CommentService_GetMoreReplies_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
