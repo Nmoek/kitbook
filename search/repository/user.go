@@ -10,7 +10,7 @@ type userSyncRepository struct {
 	dao dao.UserDao
 }
 
-func NewUserSyncRepository(dao dao.UserDao) UserSyncRepository {
+func NewUserSyncRepository(dao dao.UserDao) UserRepository {
 	return &userSyncRepository{
 		dao: dao,
 	}

@@ -45,7 +45,7 @@ func (s *SyncServiceServer) toDomainArticle(art *searchv1.Article) domain.Articl
 	return domain.Article{
 		Id:      art.Id,
 		Title:   art.Title,
-		Content: art.Context,
+		Content: art.Content,
 		Status:  int8(art.Status),
 	}
 }

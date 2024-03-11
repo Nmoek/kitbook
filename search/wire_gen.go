@@ -20,13 +20,15 @@ import (
 func InitApp() *App {
 	client := ioc.InitES()
 	userDao := dao.NewElasticSearchUserDao(client)
-	userSyncRepository := repository.NewUserSyncRepository(userDao)
+	userRepository := repository.NewUserSyncRepository(userDao)
 	articleDao := dao.NewElasticSearchArticleDao(client)
-	articleSyncRepository := repository.NewArticleSyncRepository(articleDao)
-	syncService := service.NewSyncService(userSyncRepository, articleSyncRepository)
+	articleRepository := repository.NewArticleSyncRepository(articleDao)
+	syncService := service.NewSyncService(userRepository, articleRepository)
 	syncServiceServer := grpc.NewSyncServiceServer(syncService)
+	searchService := service.NewSearchService(userRepository, articleRepository)
+	searchServiceServer := grpc.NewSearchServiceServer(searchService)
 	logger := ioc.InitLogger()
-	server := ioc.InitGRpcServer(syncServiceServer, logger)
+	server := ioc.InitGRpcServer(syncServiceServer, searchServiceServer, logger)
 	app := &App{
 		rpcServer: server,
 	}
@@ -37,4 +39,4 @@ func InitApp() *App {
 
 var thirdPartySet = wire.NewSet(ioc.InitLogger, ioc.InitES)
 
-var syncSvcSet = wire.NewSet(dao.NewElasticSearchUserDao, dao.NewElasticSearchArticleDao, repository.NewArticleSyncRepository, repository.NewUserSyncRepository, service.NewSyncService)
+var syncSvcSet = wire.NewSet(dao.NewElasticSearchUserDao, dao.NewElasticSearchArticleDao, repository.NewArticleSyncRepository, repository.NewUserSyncRepository, service.NewSyncService, service.NewSearchService)

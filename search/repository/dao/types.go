@@ -9,5 +9,5 @@ type UserDao interface {
 
 type ArticleDao interface {
 	InputArticle(ctx context.Context, art Article) error
-	SearchArticle(ctx context.Context, uid int64, keywords []string) ([]Article, error)
+	SearchArticle(ctx context.Context, keywords []string) ([]Article, error)
 }

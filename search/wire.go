@@ -23,6 +23,7 @@ var syncSvcSet = wire.NewSet(
 	repository.NewArticleSyncRepository,
 	repository.NewUserSyncRepository,
 	service.NewSyncService,
+	service.NewSearchService,
 )
 
 func InitApp() *App {
@@ -33,6 +34,7 @@ func InitApp() *App {
 		syncSvcSet,
 
 		grpc.NewSyncServiceServer,
+		grpc.NewSearchServiceServer,
 		ioc.InitGRpcServer,
 
 		wire.Struct(new(App), "*"),

@@ -7,11 +7,11 @@ import (
 )
 
 type syncService struct {
-	userRepo repository.UserSyncRepository
-	artRepo  repository.ArticleSyncRepository
+	userRepo repository.UserRepository
+	artRepo  repository.ArticleRepository
 }
 
-func NewSyncService(userRepo repository.UserSyncRepository, artRepo repository.ArticleSyncRepository) SyncService {
+func NewSyncService(userRepo repository.UserRepository, artRepo repository.ArticleRepository) SyncService {
 	return &syncService{
 		userRepo: userRepo,
 		artRepo:  artRepo,

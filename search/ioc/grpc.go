@@ -8,7 +8,9 @@ import (
 	grpc2 "kitbook/search/grpc"
 )
 
-func InitGRpcServer(syncSvc *grpc2.SyncServiceServer, l logger.Logger) *grpcx.Server {
+func InitGRpcServer(syncSvc *grpc2.SyncServiceServer,
+	searchSvc *grpc2.SearchServiceServer,
+	l logger.Logger) *grpcx.Server {
 	type Config struct {
 		EtcdAddr string `yaml:"etcd_addr"`
 		Port     int    `yaml:"port"`
@@ -23,11 +25,12 @@ func InitGRpcServer(syncSvc *grpc2.SyncServiceServer, l logger.Logger) *grpcx.Se
 
 	s := grpc.NewServer()
 	syncSvc.Register(s)
+	searchSvc.Register(s)
 	return &grpcx.Server{
 		Server:   s,
 		EtcdAddr: cfg.EtcdAddr,
 		Port:     cfg.Port,
-		BizName:  cfg.BizName,
+		BizName:  "search",
 		L:        l,
 	}
 }

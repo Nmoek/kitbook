@@ -23,6 +23,14 @@ var syncSvcSet = wire.NewSet(
 	service.NewSyncService,
 )
 
+var searchSvcSet = wire.NewSet(
+	dao.NewElasticSearchUserDao,
+	dao.NewElasticSearchArticleDao,
+	repository.NewArticleSyncRepository,
+	repository.NewUserSyncRepository,
+	service.NewSearchService,
+)
+
 func NewSyncServiceServer() *grpc.SyncServiceServer {
 	wire.Build(
 		thirdPartySet,
@@ -30,4 +38,13 @@ func NewSyncServiceServer() *grpc.SyncServiceServer {
 		grpc.NewSyncServiceServer,
 	)
 	return new(grpc.SyncServiceServer)
+}
+
+func NewSearchServiceServer() *grpc.SearchServiceServer {
+	wire.Build(
+		thirdPartySet,
+		searchSvcSet,
+		grpc.NewSearchServiceServer,
+	)
+	return new(grpc.SearchServiceServer)
 }

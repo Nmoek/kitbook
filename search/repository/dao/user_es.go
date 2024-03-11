@@ -2,8 +2,10 @@ package dao
 
 import (
 	"context"
+	"encoding/json"
 	olivere "github.com/olivere/elastic/v7"
 	"strconv"
+	"strings"
 )
 
 type ElasticSearchUserDao struct {
@@ -24,8 +26,26 @@ func (e *ElasticSearchUserDao) InputUser(ctx context.Context, user User) error {
 }
 
 func (e *ElasticSearchUserDao) SearchUser(ctx context.Context, keywords []string) ([]User, error) {
-	//TODO implement me
-	panic("implement me")
+	queryString := strings.Join(keywords, " ")
+
+	query := olivere.NewMatchQuery("nikename", queryString)
+
+	resp, err := e.client.Search(UserIndexName).Query(query).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]User, 0, len(resp.Hits.Hits))
+	for _, hit := range resp.Hits.Hits {
+		var user User
+		err = json.Unmarshal(hit.Source, &user)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, user)
+	}
+
+	return res, nil
 }
 
 const UserIndexName = "user_index"
