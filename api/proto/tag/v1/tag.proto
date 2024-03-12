@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package tag.v1;
+option go_package="tag/v1;tag.v1";
+
+service TagService {
+  rpc CreateTag(CreateTagRequest)returns(CreateTagResponse);
+
+  rpc GetTags(GetTagsRequest)returns(GetTagsResponse);
+}
+
+message CreateTagRequest{
+  int64 uid = 1;
+  string name = 2;
+}
+
+message CreateTagResponse{
+  int64 id = 1;
+}
+
+message GetTagsRequest{
+  int64 uid = 1;
+
+}
+
+message GetTagsResponse{
+  repeated Tag tags = 1;
+}
+
+message Tag {
+  int64 id = 1;
+  int64 uid = 2;
+  string name = 3;
+}
+
