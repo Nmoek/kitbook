@@ -8,11 +8,13 @@ import (
 
 type articleSyncRepository struct {
 	dao dao.ArticleDao
+	tag dao.TagDao
 }
 
-func NewArticleSyncRepository(dao dao.ArticleDao) ArticleRepository {
+func NewArticleSyncRepository(dao dao.ArticleDao, tag dao.TagDao) ArticleRepository {
 	return &articleSyncRepository{
 		dao: dao,
+		tag: tag,
 	}
 }
 
@@ -21,7 +23,12 @@ func (a *articleSyncRepository) InputArticle(ctx context.Context, art domain.Art
 }
 
 func (a *articleSyncRepository) SearchArticle(ctx context.Context, uid int64, keywords []string) ([]domain.Article, error) {
-	res, err := a.dao.SearchArticle(ctx, keywords)
+	artIds, err := a.tag.SearchTag(ctx, uid, "article", keywords)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := a.dao.SearchArticle(ctx, artIds, keywords)
 	return a.convertsArtsDomain(res), err
 }
 

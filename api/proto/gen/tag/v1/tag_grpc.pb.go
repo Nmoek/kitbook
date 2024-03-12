@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	TagService_CreateTag_FullMethodName = "/tag.v1.TagService/CreateTag"
-	TagService_GetTags_FullMethodName   = "/tag.v1.TagService/GetTagsByUid"
+	TagService_CreateTag_FullMethodName  = "/tag.v1.TagService/CreateTag"
+	TagService_GetTags_FullMethodName    = "/tag.v1.TagService/GetTags"
+	TagService_AttachTags_FullMethodName = "/tag.v1.TagService/AttachTags"
+	TagService_GetBizTags_FullMethodName = "/tag.v1.TagService/GetBizTags"
 )
 
 // TagServiceClient is the client API for TagService service.
@@ -29,6 +31,8 @@ const (
 type TagServiceClient interface {
 	CreateTag(ctx context.Context, in *CreateTagRequest, opts ...grpc.CallOption) (*CreateTagResponse, error)
 	GetTags(ctx context.Context, in *GetTagsRequest, opts ...grpc.CallOption) (*GetTagsResponse, error)
+	AttachTags(ctx context.Context, in *AttachTagsRequest, opts ...grpc.CallOption) (*AttachTagsResponse, error)
+	GetBizTags(ctx context.Context, in *GetBizTagsRequest, opts ...grpc.CallOption) (*GetBizTagsResponse, error)
 }
 
 type tagServiceClient struct {
@@ -57,12 +61,32 @@ func (c *tagServiceClient) GetTags(ctx context.Context, in *GetTagsRequest, opts
 	return out, nil
 }
 
+func (c *tagServiceClient) AttachTags(ctx context.Context, in *AttachTagsRequest, opts ...grpc.CallOption) (*AttachTagsResponse, error) {
+	out := new(AttachTagsResponse)
+	err := c.cc.Invoke(ctx, TagService_AttachTags_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tagServiceClient) GetBizTags(ctx context.Context, in *GetBizTagsRequest, opts ...grpc.CallOption) (*GetBizTagsResponse, error) {
+	out := new(GetBizTagsResponse)
+	err := c.cc.Invoke(ctx, TagService_GetBizTags_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TagServiceServer is the server API for TagService service.
 // All implementations must embed UnimplementedTagServiceServer
 // for forward compatibility
 type TagServiceServer interface {
 	CreateTag(context.Context, *CreateTagRequest) (*CreateTagResponse, error)
 	GetTags(context.Context, *GetTagsRequest) (*GetTagsResponse, error)
+	AttachTags(context.Context, *AttachTagsRequest) (*AttachTagsResponse, error)
+	GetBizTags(context.Context, *GetBizTagsRequest) (*GetBizTagsResponse, error)
 	mustEmbedUnimplementedTagServiceServer()
 }
 
@@ -74,7 +98,13 @@ func (UnimplementedTagServiceServer) CreateTag(context.Context, *CreateTagReques
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTag not implemented")
 }
 func (UnimplementedTagServiceServer) GetTags(context.Context, *GetTagsRequest) (*GetTagsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTagsByUid not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method GetTags not implemented")
+}
+func (UnimplementedTagServiceServer) AttachTags(context.Context, *AttachTagsRequest) (*AttachTagsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AttachTags not implemented")
+}
+func (UnimplementedTagServiceServer) GetBizTags(context.Context, *GetBizTagsRequest) (*GetBizTagsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBizTags not implemented")
 }
 func (UnimplementedTagServiceServer) mustEmbedUnimplementedTagServiceServer() {}
 
@@ -125,6 +155,42 @@ func _TagService_GetTags_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TagService_AttachTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AttachTagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TagServiceServer).AttachTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TagService_AttachTags_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TagServiceServer).AttachTags(ctx, req.(*AttachTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TagService_GetBizTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBizTagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TagServiceServer).GetBizTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TagService_GetBizTags_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TagServiceServer).GetBizTags(ctx, req.(*GetBizTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TagService_ServiceDesc is the grpc.ServiceDesc for TagService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -137,8 +203,16 @@ var TagService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TagService_CreateTag_Handler,
 		},
 		{
-			MethodName: "GetTagsByUid",
+			MethodName: "GetTags",
 			Handler:    _TagService_GetTags_Handler,
+		},
+		{
+			MethodName: "AttachTags",
+			Handler:    _TagService_AttachTags_Handler,
+		},
+		{
+			MethodName: "GetBizTags",
+			Handler:    _TagService_GetBizTags_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

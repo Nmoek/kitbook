@@ -9,6 +9,8 @@ import (
 type TagService interface {
 	CreateTag(ctx context.Context, uid int64, name string) (int64, error)
 	GetTags(ctx context.Context, uid int64) ([]domain.Tag, error)
+	AttachTags(ctx context.Context, tids []int64, uid int64, biz string, bizId int64) error
+	GetBizTags(ctx context.Context, bizId int64, biz string, uid int64) ([]domain.Tag, error)
 }
 
 type tagService struct {
@@ -30,4 +32,17 @@ func (t *tagService) CreateTag(ctx context.Context, uid int64, name string) (int
 
 func (t *tagService) GetTags(ctx context.Context, uid int64) ([]domain.Tag, error) {
 	return t.repo.GetTags(ctx, uid)
+}
+
+func (t *tagService) AttachTags(ctx context.Context, tids []int64, uid int64, biz string, bizId int64) error {
+	err := t.repo.BindTagToBiz(ctx, tids, uid, biz, bizId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *tagService) GetBizTags(ctx context.Context, bizId int64, biz string, uid int64) ([]domain.Tag, error) {
+	return t.repo.GetBizTags(ctx, bizId, biz, uid)
 }

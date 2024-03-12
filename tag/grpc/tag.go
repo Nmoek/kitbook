@@ -36,6 +36,27 @@ func (t *TagServiceServer) GetTags(ctx context.Context, request *tagv1.GetTagsRe
 	}, err
 }
 
+// @func: AttachTags
+// @date: 2024-03-12 22:13:43
+// @brief: 为资源打上标签
+// @author: Kewin Li
+// @receiver t
+// @param ctx
+// @param request
+// @return *tagv1.AttachTagsResponse
+// @return error
+func (t *TagServiceServer) AttachTags(ctx context.Context, request *tagv1.AttachTagsRequest) (*tagv1.AttachTagsResponse, error) {
+	err := t.svc.AttachTags(ctx, request.GetTids(), request.GetUid(), request.GetBiz(), request.GetBizId())
+	return &tagv1.AttachTagsResponse{}, err
+}
+
+func (t *TagServiceServer) GetBizTags(ctx context.Context, request *tagv1.GetBizTagsRequest) (*tagv1.GetBizTagsResponse, error) {
+	tags, err := t.svc.GetBizTags(ctx, request.GetBizId(), request.GetBiz(), request.GetUid())
+	return &tagv1.GetBizTagsResponse{
+		Tags: t.toTagsRpc(tags),
+	}, err
+}
+
 func (t *TagServiceServer) toTagRpc(tag *domain.Tag) *tagv1.Tag {
 	return &tagv1.Tag{
 		Id:   tag.Id,

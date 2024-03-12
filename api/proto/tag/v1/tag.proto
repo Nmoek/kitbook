@@ -5,8 +5,10 @@ option go_package="tag/v1;tag.v1";
 
 service TagService {
   rpc CreateTag(CreateTagRequest)returns(CreateTagResponse);
-
   rpc GetTags(GetTagsRequest)returns(GetTagsResponse);
+
+  rpc AttachTags(AttachTagsRequest)returns(AttachTagsResponse);
+  rpc GetBizTags(GetBizTagsRequest)returns(GetBizTagsResponse);
 }
 
 message CreateTagRequest{
@@ -26,6 +28,28 @@ message GetTagsRequest{
 message GetTagsResponse{
   repeated Tag tags = 1;
 }
+
+message AttachTagsRequest{
+  repeated int64 tids = 1;
+  int64 uid = 2;
+  string biz = 3;
+  int64 biz_id = 4;
+
+}
+
+message AttachTagsResponse{
+}
+
+message GetBizTagsRequest{
+  int64 biz_id = 1;
+  string biz = 2;
+  int64 uid = 3;
+}
+
+message GetBizTagsResponse{
+  repeated Tag tags = 1;
+}
+
 
 message Tag {
   int64 id = 1;

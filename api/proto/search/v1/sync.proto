@@ -6,6 +6,7 @@ option go_package="search/v1;searchv1";
 service SyncService {
   rpc InputUser(InputUserRequest)returns(InputUserResponse);
   rpc InputArticle(InputArticleRequest)returns(InputArticleResponse);
+  rpc InputAny(InputAnyRequest)returns(InputAnyResponse);
 }
 
 message InputUserRequest {
@@ -22,6 +23,16 @@ message InputArticleRequest {
 }
 
 message InputArticleResponse {
+
+}
+
+message InputAnyRequest {
+  string index_name = 1;
+  string doc_id = 2;
+  string data = 3;
+}
+
+message InputAnyResponse {
 
 }
 

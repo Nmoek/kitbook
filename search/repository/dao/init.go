@@ -14,6 +14,8 @@ var (
 	userIndexDef string
 	//go:embed article_index.json
 	artIndexDef string
+	//go:embed tags_index.json
+	tagsIndexDef string
 )
 
 func InitEs(client *olivere.Client) error {
@@ -30,6 +32,10 @@ func InitEs(client *olivere.Client) error {
 	eg.Go(func() error {
 
 		return tryCreateIndex(ctx, client, ArticleIndexName, artIndexDef)
+	})
+
+	eg.Go(func() error {
+		return tryCreateIndex(ctx, client, TagsIndexName, tagsIndexDef)
 	})
 
 	return eg.Wait()

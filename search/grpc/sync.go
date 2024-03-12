@@ -32,6 +32,11 @@ func (s *SyncServiceServer) InputArticle(ctx context.Context, request *searchv1.
 	return &searchv1.InputArticleResponse{}, err
 }
 
+func (s *SyncServiceServer) InputAny(ctx context.Context, request *searchv1.InputAnyRequest) (*searchv1.InputAnyResponse, error) {
+	err := s.syncSvc.Input(ctx, request.GetIndexName(), request.GetDocId(), request.GetData())
+	return &searchv1.InputAnyResponse{}, err
+}
+
 func (s *SyncServiceServer) toDomainUser(user *searchv1.User) domain.User {
 	return domain.User{
 		Id:       user.Id,

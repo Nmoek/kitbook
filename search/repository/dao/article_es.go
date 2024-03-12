@@ -26,15 +26,22 @@ func (e *ElasticSearchArticleDao) InputArticle(ctx context.Context, art Article)
 	return err
 }
 
-func (e *ElasticSearchArticleDao) SearchArticle(ctx context.Context, keywords []string) ([]Article, error) {
+func (e *ElasticSearchArticleDao) SearchArticle(ctx context.Context, artIds []int64, keywords []string) ([]Article, error) {
 	queryString := strings.Join(keywords, " ")
 	status := olivere.NewTermQuery("status", domain.ArticleStatusPublished) // 帖子必须可见
 	title := olivere.NewMatchQuery("title", queryString)
 	content := olivere.NewMatchQuery("content", queryString)
 
-	// 类似Or语义
-	or := olivere.NewBoolQuery().Should(title, content)
-	// 等价于  `where status = ArticleStatusPublished  and (title = xx or content = xx)`
+	tmp := []any{}
+	for _, id := range artIds {
+		tmp = append(tmp, any(id))
+	}
+	// 更高的权重 意味着标签命中会排在前面
+	tag := olivere.NewTermsQuery("id", tmp).Boost(2)
+
+	// Should 类似Or语义
+	or := olivere.NewBoolQuery().Should(title, content, tag)
+	// 等价于  `where status = ArticleStatusPublished  and (title = xx or content = xx or tag IN [] )`
 	query := olivere.NewBoolQuery().Must(status, or)
 	resp, err := e.client.Search(ArticleIndexName).Query(query).Do(ctx)
 	if err != nil {

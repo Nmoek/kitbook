@@ -11,6 +11,8 @@ import (
 type TagRepository interface {
 	CreateTag(ctx context.Context, tag domain.Tag) (int64, error)
 	GetTags(ctx context.Context, uid int64) ([]domain.Tag, error)
+	BindTagToBiz(ctx context.Context, tids []int64, uid int64, biz string, bizId int64) error
+	GetBizTags(ctx context.Context, bizId int64, biz string, uid int64) ([]domain.Tag, error)
 }
 
 type CacheTagRepository struct {
@@ -60,6 +62,33 @@ func (c *CacheTagRepository) GetTags(ctx context.Context, uid int64) ([]domain.T
 	err = c.cache.Append(ctx, uid, res...)
 	if err != nil {
 		//TODO:日志告警
+	}
+	return res, nil
+}
+
+func (c *CacheTagRepository) BindTagToBiz(ctx context.Context, tids []int64, uid int64, biz string, bizId int64) error {
+	tags := make([]dao.TagBiz, 0, len(tids))
+	for _, id := range tids {
+		tags = append(tags, dao.TagBiz{
+			Biz:   biz,
+			BizId: bizId,
+			Tid:   id,
+			Uid:   uid,
+		})
+	}
+
+	return c.dao.CreateTagBiz(ctx, tags)
+}
+
+func (c *CacheTagRepository) GetBizTags(ctx context.Context, bizId int64, biz string, uid int64) ([]domain.Tag, error) {
+	tagsDao, err := c.dao.GetTagsByBiz(ctx, bizId, biz, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]domain.Tag, 0, len(tagsDao))
+	for _, t := range tagsDao {
+		res = append(res, c.toTagDomain(&t))
 	}
 	return res, nil
 }
