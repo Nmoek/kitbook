@@ -75,3 +75,24 @@ services:
       - "ES_JAVA_OPTS=-Xms84m -Xmx512m"
     ports:
       - "9200:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.13.0
+    volumes:
+#      - ../logstash/config/:/usr/share/logstash/pipeline
+#      - ../logstash/log/:/usr/share/logstash/logs
+      - ./config/logstash/:/usr/share/logstash/pipeline
+#      - ../logstash/log/:/usr/share/logstash/logs
+    ports:
+      - "5044:5044"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - il8n.locale=zn-CH
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.4
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - il8n.locale=zn-CH
