@@ -30,6 +30,7 @@ type ArticleCache interface {
 	GetPubById(ctx context.Context, artId int64) (domain.Article, error)
 	SetPubById(ctx context.Context, art domain.Article) error
 	SetPub(ctx context.Context, art domain.Article) error
+	DelPub(ctx context.Context, id int64) error
 }
 
 type RedisArticleCache struct {
@@ -260,6 +261,18 @@ func (r *RedisArticleCache) SetPub(ctx context.Context, art domain.Article) erro
 	}
 
 	return r.client.Set(ctx, r.createPreCacheKey(art.Id), val, 10*time.Minute).Err()
+}
+
+// @func: DelPub
+// @date: 2024-03-15 17:17:30
+// @brief: 删除缓存
+// @author: Kewin Li
+// @receiver r
+// @param ctx
+// @param art
+// @return error
+func (r *RedisArticleCache) DelPub(ctx context.Context, id int64) error {
+	return r.client.Del(ctx, r.createPreCacheKey(id)).Err()
 }
 
 // @func: createKey

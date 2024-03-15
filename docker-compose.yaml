@@ -3,7 +3,9 @@ services:
   mysql8:
     image: mysql:8.0
     restart: always
-    command: --default-authentication-plugin=mysql_native_password
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --binlog-format=ROW
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
@@ -44,6 +46,7 @@ services:
     environment:
       - KAFKA_CFG_NODE_ID=0
 #       允许自动创建 topic，线上千万不要开启
+      - KAFKA_CREATE_TOPICS=kitbook_binlog:3:1
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:9094
@@ -96,3 +99,20 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - il8n.locale=zn-CH
+
+  canal:
+    image: canal/canal-server
+    volumes:
+      - ./script/canal/kitbook/instance.properties:/home/admin/canal-server/conf/kitbook/instance.properties
+      - ./script/canal/canal.properties:/home/admin/canal-server/conf/canal.properties
+    environment:
+      - CANAL_IP=canal-server
+      - CANAL_PORT=11111
+      - CANAL_DESTINATIONS=example
+    depends_on:
+      - mysql8
+      - kafka
+    ports:
+      - "11111:11111"
+
+

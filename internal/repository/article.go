@@ -447,6 +447,10 @@ func (c *CacheArticleRepository) ListPub(ctx context.Context, start time.Time, o
 	return artsDomain, nil
 }
 
+func (c *CacheArticleRepository) Cache() cache.ArticleCache {
+	return c.cache
+}
+
 // @func: convertsDominUser
 // @date: 2023-10-09 02:08:11
 // @brief: 制作库转化为domin的Article结构体
