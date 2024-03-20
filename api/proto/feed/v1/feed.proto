@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+
+package feed.v1;
+option go_package = "feed/v1;feedv1";
+
+service FeedService {
+
+
+}

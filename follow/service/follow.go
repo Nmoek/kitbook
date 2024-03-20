@@ -35,6 +35,14 @@ func (a *ArticleFollowService) GetFollowee(ctx context.Context, follower int64, 
 	return a.repo.GetFollowee(ctx, follower, offset, limit)
 }
 
+func (a *ArticleFollowService) GetFollower(ctx context.Context, followee int64, offset int64, limit int64) ([]domain.FollowRelation, error) {
+	return a.repo.GetFollowee(ctx, followee, offset, limit)
+}
+
 func (a *ArticleFollowService) FollowInfo(ctx context.Context, followee, follower int64) (domain.FollowRelation, error) {
 	return a.repo.FollowInfo(ctx, followee, follower)
+}
+
+func (a *ArticleFollowService) GetFollowStatics(ctx context.Context, uid int64) (domain.FollowStatics, error) {
+	return a.repo.GetFollowStatics(ctx, uid)
 }

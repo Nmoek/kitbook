@@ -19,208 +19,286 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	CommentService_Follow_FullMethodName       = "/follow.v1.CommentService/Follow"
-	CommentService_CancelFollow_FullMethodName = "/follow.v1.CommentService/CancelFollow"
-	CommentService_GetFollowee_FullMethodName  = "/follow.v1.CommentService/GetFollowee"
-	CommentService_FollowInfo_FullMethodName   = "/follow.v1.CommentService/FollowInfo"
+	FollowService_Follow_FullMethodName           = "/follow.v1.FollowService/Follow"
+	FollowService_CancelFollow_FullMethodName     = "/follow.v1.FollowService/CancelFollow"
+	FollowService_GetFollowee_FullMethodName      = "/follow.v1.FollowService/GetFollowee"
+	FollowService_GetFollower_FullMethodName      = "/follow.v1.FollowService/GetFollower"
+	FollowService_FollowInfo_FullMethodName       = "/follow.v1.FollowService/FollowInfo"
+	FollowService_GetFollowStatics_FullMethodName = "/follow.v1.FollowService/GetFollowStatics"
 )
 
-// CommentServiceClient is the client API for CommentService service.
+// FollowServiceClient is the client API for FollowService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type CommentServiceClient interface {
+type FollowServiceClient interface {
 	// 关注
 	Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error)
 	// 取消关注
 	CancelFollow(ctx context.Context, in *CancelFollowRequest, opts ...grpc.CallOption) (*CancelFollowResponse, error)
 	// 获取关注列表
 	GetFollowee(ctx context.Context, in *GetFolloweeRequest, opts ...grpc.CallOption) (*GetFolloweeResponse, error)
+	// 获取粉丝列表
+	GetFollower(ctx context.Context, in *GetFollowerRequest, opts ...grpc.CallOption) (*GetFollowerResponse, error)
 	// 查询关注详情
 	FollowInfo(ctx context.Context, in *FollowInfoRequest, opts ...grpc.CallOption) (*FollowInfoResponse, error)
+	// 获取关注数、粉丝数
+	GetFollowStatics(ctx context.Context, in *GetFollowStaticsRequest, opts ...grpc.CallOption) (*GetFollowStaticsResponse, error)
 }
 
-type commentServiceClient struct {
+type followServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCommentServiceClient(cc grpc.ClientConnInterface) CommentServiceClient {
-	return &commentServiceClient{cc}
+func NewFollowServiceClient(cc grpc.ClientConnInterface) FollowServiceClient {
+	return &followServiceClient{cc}
 }
 
-func (c *commentServiceClient) Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error) {
+func (c *followServiceClient) Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error) {
 	out := new(FollowResponse)
-	err := c.cc.Invoke(ctx, CommentService_Follow_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, FollowService_Follow_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *commentServiceClient) CancelFollow(ctx context.Context, in *CancelFollowRequest, opts ...grpc.CallOption) (*CancelFollowResponse, error) {
+func (c *followServiceClient) CancelFollow(ctx context.Context, in *CancelFollowRequest, opts ...grpc.CallOption) (*CancelFollowResponse, error) {
 	out := new(CancelFollowResponse)
-	err := c.cc.Invoke(ctx, CommentService_CancelFollow_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, FollowService_CancelFollow_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *commentServiceClient) GetFollowee(ctx context.Context, in *GetFolloweeRequest, opts ...grpc.CallOption) (*GetFolloweeResponse, error) {
+func (c *followServiceClient) GetFollowee(ctx context.Context, in *GetFolloweeRequest, opts ...grpc.CallOption) (*GetFolloweeResponse, error) {
 	out := new(GetFolloweeResponse)
-	err := c.cc.Invoke(ctx, CommentService_GetFollowee_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, FollowService_GetFollowee_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *commentServiceClient) FollowInfo(ctx context.Context, in *FollowInfoRequest, opts ...grpc.CallOption) (*FollowInfoResponse, error) {
+func (c *followServiceClient) GetFollower(ctx context.Context, in *GetFollowerRequest, opts ...grpc.CallOption) (*GetFollowerResponse, error) {
+	out := new(GetFollowerResponse)
+	err := c.cc.Invoke(ctx, FollowService_GetFollower_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *followServiceClient) FollowInfo(ctx context.Context, in *FollowInfoRequest, opts ...grpc.CallOption) (*FollowInfoResponse, error) {
 	out := new(FollowInfoResponse)
-	err := c.cc.Invoke(ctx, CommentService_FollowInfo_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, FollowService_FollowInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// CommentServiceServer is the server API for CommentService service.
-// All implementations must embed UnimplementedCommentServiceServer
+func (c *followServiceClient) GetFollowStatics(ctx context.Context, in *GetFollowStaticsRequest, opts ...grpc.CallOption) (*GetFollowStaticsResponse, error) {
+	out := new(GetFollowStaticsResponse)
+	err := c.cc.Invoke(ctx, FollowService_GetFollowStatics_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FollowServiceServer is the server API for FollowService service.
+// All implementations must embed UnimplementedFollowServiceServer
 // for forward compatibility
-type CommentServiceServer interface {
+type FollowServiceServer interface {
 	// 关注
 	Follow(context.Context, *FollowRequest) (*FollowResponse, error)
 	// 取消关注
 	CancelFollow(context.Context, *CancelFollowRequest) (*CancelFollowResponse, error)
 	// 获取关注列表
 	GetFollowee(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error)
+	// 获取粉丝列表
+	GetFollower(context.Context, *GetFollowerRequest) (*GetFollowerResponse, error)
 	// 查询关注详情
 	FollowInfo(context.Context, *FollowInfoRequest) (*FollowInfoResponse, error)
-	mustEmbedUnimplementedCommentServiceServer()
+	// 获取关注数、粉丝数
+	GetFollowStatics(context.Context, *GetFollowStaticsRequest) (*GetFollowStaticsResponse, error)
+	mustEmbedUnimplementedFollowServiceServer()
 }
 
-// UnimplementedCommentServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedCommentServiceServer struct {
+// UnimplementedFollowServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedFollowServiceServer struct {
 }
 
-func (UnimplementedCommentServiceServer) Follow(context.Context, *FollowRequest) (*FollowResponse, error) {
+func (UnimplementedFollowServiceServer) Follow(context.Context, *FollowRequest) (*FollowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Follow not implemented")
 }
-func (UnimplementedCommentServiceServer) CancelFollow(context.Context, *CancelFollowRequest) (*CancelFollowResponse, error) {
+func (UnimplementedFollowServiceServer) CancelFollow(context.Context, *CancelFollowRequest) (*CancelFollowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelFollow not implemented")
 }
-func (UnimplementedCommentServiceServer) GetFollowee(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error) {
+func (UnimplementedFollowServiceServer) GetFollowee(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFollowee not implemented")
 }
-func (UnimplementedCommentServiceServer) FollowInfo(context.Context, *FollowInfoRequest) (*FollowInfoResponse, error) {
+func (UnimplementedFollowServiceServer) GetFollower(context.Context, *GetFollowerRequest) (*GetFollowerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFollower not implemented")
+}
+func (UnimplementedFollowServiceServer) FollowInfo(context.Context, *FollowInfoRequest) (*FollowInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FollowInfo not implemented")
 }
-func (UnimplementedCommentServiceServer) mustEmbedUnimplementedCommentServiceServer() {}
+func (UnimplementedFollowServiceServer) GetFollowStatics(context.Context, *GetFollowStaticsRequest) (*GetFollowStaticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFollowStatics not implemented")
+}
+func (UnimplementedFollowServiceServer) mustEmbedUnimplementedFollowServiceServer() {}
 
-// UnsafeCommentServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CommentServiceServer will
+// UnsafeFollowServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FollowServiceServer will
 // result in compilation errors.
-type UnsafeCommentServiceServer interface {
-	mustEmbedUnimplementedCommentServiceServer()
+type UnsafeFollowServiceServer interface {
+	mustEmbedUnimplementedFollowServiceServer()
 }
 
-func RegisterCommentServiceServer(s grpc.ServiceRegistrar, srv CommentServiceServer) {
-	s.RegisterService(&CommentService_ServiceDesc, srv)
+func RegisterFollowServiceServer(s grpc.ServiceRegistrar, srv FollowServiceServer) {
+	s.RegisterService(&FollowService_ServiceDesc, srv)
 }
 
-func _CommentService_Follow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FollowService_Follow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FollowRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommentServiceServer).Follow(ctx, in)
+		return srv.(FollowServiceServer).Follow(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CommentService_Follow_FullMethodName,
+		FullMethod: FollowService_Follow_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentServiceServer).Follow(ctx, req.(*FollowRequest))
+		return srv.(FollowServiceServer).Follow(ctx, req.(*FollowRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CommentService_CancelFollow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FollowService_CancelFollow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CancelFollowRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommentServiceServer).CancelFollow(ctx, in)
+		return srv.(FollowServiceServer).CancelFollow(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CommentService_CancelFollow_FullMethodName,
+		FullMethod: FollowService_CancelFollow_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentServiceServer).CancelFollow(ctx, req.(*CancelFollowRequest))
+		return srv.(FollowServiceServer).CancelFollow(ctx, req.(*CancelFollowRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CommentService_GetFollowee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FollowService_GetFollowee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetFolloweeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommentServiceServer).GetFollowee(ctx, in)
+		return srv.(FollowServiceServer).GetFollowee(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CommentService_GetFollowee_FullMethodName,
+		FullMethod: FollowService_GetFollowee_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentServiceServer).GetFollowee(ctx, req.(*GetFolloweeRequest))
+		return srv.(FollowServiceServer).GetFollowee(ctx, req.(*GetFolloweeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CommentService_FollowInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FollowService_GetFollower_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFollowerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FollowServiceServer).GetFollower(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FollowService_GetFollower_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FollowServiceServer).GetFollower(ctx, req.(*GetFollowerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FollowService_FollowInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FollowInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CommentServiceServer).FollowInfo(ctx, in)
+		return srv.(FollowServiceServer).FollowInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CommentService_FollowInfo_FullMethodName,
+		FullMethod: FollowService_FollowInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentServiceServer).FollowInfo(ctx, req.(*FollowInfoRequest))
+		return srv.(FollowServiceServer).FollowInfo(ctx, req.(*FollowInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// CommentService_ServiceDesc is the grpc.ServiceDesc for CommentService service.
+func _FollowService_GetFollowStatics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFollowStaticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FollowServiceServer).GetFollowStatics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FollowService_GetFollowStatics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FollowServiceServer).GetFollowStatics(ctx, req.(*GetFollowStaticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// FollowService_ServiceDesc is the grpc.ServiceDesc for FollowService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CommentService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "follow.v1.CommentService",
-	HandlerType: (*CommentServiceServer)(nil),
+var FollowService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "follow.v1.FollowService",
+	HandlerType: (*FollowServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Follow",
-			Handler:    _CommentService_Follow_Handler,
+			Handler:    _FollowService_Follow_Handler,
 		},
 		{
 			MethodName: "CancelFollow",
-			Handler:    _CommentService_CancelFollow_Handler,
+			Handler:    _FollowService_CancelFollow_Handler,
 		},
 		{
 			MethodName: "GetFollowee",
-			Handler:    _CommentService_GetFollowee_Handler,
+			Handler:    _FollowService_GetFollowee_Handler,
+		},
+		{
+			MethodName: "GetFollower",
+			Handler:    _FollowService_GetFollower_Handler,
 		},
 		{
 			MethodName: "FollowInfo",
-			Handler:    _CommentService_FollowInfo_Handler,
+			Handler:    _FollowService_FollowInfo_Handler,
+		},
+		{
+			MethodName: "GetFollowStatics",
+			Handler:    _FollowService_GetFollowStatics_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -12,7 +12,7 @@ import (
 // NativePaymentServiceServer
 // @Description: 评论服务远程调用接口
 type FollowServiceServer struct {
-	followv1.UnimplementedCommentServiceServer
+	followv1.UnimplementedFollowServiceServer
 	svc service.FollowService
 }
 
@@ -29,7 +29,7 @@ func NewFollowServiceServer(svc service.FollowService) *FollowServiceServer {
 // @receiver f
 // @param s
 func (f *FollowServiceServer) Register(s *grpc.Server) {
-	followv1.RegisterCommentServiceServer(s, f)
+	followv1.RegisterFollowServiceServer(s, f)
 }
 
 func (f *FollowServiceServer) Follow(ctx context.Context, request *followv1.FollowRequest) (*followv1.FollowResponse, error) {
@@ -52,4 +52,16 @@ func (f *FollowServiceServer) CancelFollow(ctx context.Context, request *followv
 
 func (f *FollowServiceServer) FollowInfo(ctx context.Context, request *followv1.FollowInfoRequest) (*followv1.FollowInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FollowInfo not implemented")
+}
+
+func (f *FollowServiceServer) GetFollowStatics(ctx context.Context, request *followv1.GetFollowStaticsRequest) (*followv1.GetFollowStaticsResponse, error) {
+	statics, err := f.svc.GetFollowStatics(ctx, request.GetUid())
+	if err != nil {
+		return nil, err
+	}
+
+	return &followv1.GetFollowStaticsResponse{
+		Followees: statics.Followees,
+		Followers: statics.Followers,
+	}, nil
 }

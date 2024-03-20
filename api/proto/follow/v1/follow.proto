@@ -10,16 +10,19 @@ message FollowRelation {
 }
 
 
-service CommentService {
+service FollowService {
   // 关注
   rpc Follow(FollowRequest) returns (FollowResponse);
   // 取消关注
   rpc CancelFollow(CancelFollowRequest) returns (CancelFollowResponse);
-
   // 获取关注列表
   rpc GetFollowee(GetFolloweeRequest) returns(GetFolloweeResponse);
+  // 获取粉丝列表
+  rpc GetFollower(GetFollowerRequest) returns(GetFollowerResponse);
   // 查询关注详情
   rpc FollowInfo(FollowInfoRequest) returns(FollowInfoResponse);
+  // 获取关注数、粉丝数
+  rpc GetFollowStatics(GetFollowStaticsRequest) returns(GetFollowStaticsResponse);
 
 }
 
@@ -51,6 +54,16 @@ message GetFolloweeResponse{
   repeated FollowRelation follow_relations = 1;
 }
 
+message GetFollowerRequest{
+  int64 followee = 1;
+  int64 offset = 2;
+  int64 limit = 3;
+}
+
+message GetFollowerResponse{
+  repeated FollowRelation follow_relations = 1;
+}
+
 message FollowInfoRequest{
   int64 follower = 1;
   int64 followee = 2;
@@ -58,5 +71,14 @@ message FollowInfoRequest{
 
 message FollowInfoResponse{
    FollowRelation follow_relations = 1;
+}
+
+message GetFollowStaticsRequest {
+  int64 uid = 1;
+}
+
+message GetFollowStaticsResponse {
+  int64 followees = 1; // 关注数
+  int64 followers = 2;  // 粉丝数
 }
 
