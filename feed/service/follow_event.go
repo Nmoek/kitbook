@@ -36,3 +36,7 @@ func (f *FollowHandler) CreateFeedEvent(ctx context.Context, ext domain.ExtendFi
 		},
 	})
 }
+
+func (f *FollowHandler) FindFeedEvents(ctx context.Context, uid int64, timestamp int64, limit int64) ([]domain.FeedEvent, error) {
+	return f.repo.FindPushEventsType(ctx, FollowEventName, uid, timestamp, limit)
+}

@@ -8,22 +8,42 @@ import (
 
 type FeedPullEventDao interface {
 	CreatePullEvent(ctx context.Context, event FeedPullEvent) error
+
+	FindPullEvents(ctx context.Context, ids []int64, timestamp int64, limit int64) ([]FeedPullEvent, error)
+	FindPullEventsType(ctx context.Context, typ string, ids []int64, timestamp int64, limit int64) ([]FeedPullEvent, error)
 }
 
-type feedPullEventDap struct {
+type feedPullEventDo struct {
 	db *gorm.DB
 	l  logger.Logger
 }
 
 func NewFeedPullEventDao(db *gorm.DB, l logger.Logger) FeedPullEventDao {
-	return &feedPullEventDap{
+	return &feedPullEventDo{
 		db: db,
 		l:  l,
 	}
 }
 
-func (f *feedPullEventDap) CreatePullEvent(ctx context.Context, event FeedPullEvent) error {
+func (f *feedPullEventDo) CreatePullEvent(ctx context.Context, event FeedPullEvent) error {
 	return f.db.WithContext(ctx).Create(&event).Error
+}
+
+func (f *feedPullEventDo) FindPullEvents(ctx context.Context, ids []int64, timestamp int64, limit int64) ([]FeedPullEvent, error) {
+	var res []FeedPullEvent
+	err := f.db.WithContext(ctx).
+		Where("id IN ? AND ctime < ?", ids, timestamp).
+		Order("ctime desc").
+		Limit(int(limit)).First(&res).Error
+	return res, err
+}
+
+func (f *feedPullEventDo) FindPullEventsType(ctx context.Context, typ string, ids []int64, timestamp int64, limit int64) ([]FeedPullEvent, error) {
+	var res []FeedPullEvent
+	err := f.db.WithContext(ctx).Where("id IN ? AND type = ? AND ctime < ?", ids, typ, timestamp).
+		Order("ctime desc").
+		Limit(int(limit)).First(&res).Error
+	return res, err
 }
 
 // FeedPullEvent

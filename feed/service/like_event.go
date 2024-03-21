@@ -39,3 +39,7 @@ func (l *LikeHandler) CreateFeedEvent(ctx context.Context, ext domain.ExtendFiel
 		},
 	})
 }
+
+func (l *LikeHandler) FindFeedEvents(ctx context.Context, uid int64, timestamp int64, limit int64) ([]domain.FeedEvent, error) {
+	return l.repo.FindPushEventsType(ctx, LikeEventName, uid, timestamp, limit)
+}

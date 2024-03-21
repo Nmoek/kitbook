@@ -8,6 +8,8 @@ import (
 
 type FeedPushEventDao interface {
 	CreatePushEvents(ctx context.Context, events []FeedPushEvent) error
+	FindPushEvents(ctx context.Context, id int64, timestamp int64, limit int64) ([]FeedPushEvent, error)
+	FindPushEventsType(ctx context.Context, typ string, id int64, timestamp int64, limit int64) ([]FeedPushEvent, error)
 }
 
 type feedPushEventDao struct {
@@ -24,6 +26,24 @@ func NewFeedPushEventDao(db *gorm.DB, l logger.Logger) FeedPushEventDao {
 
 func (f *feedPushEventDao) CreatePushEvents(ctx context.Context, events []FeedPushEvent) error {
 	return f.db.WithContext(ctx).Create(&events).Error
+}
+
+func (f *feedPushEventDao) FindPushEvents(ctx context.Context, id int64, timestamp int64, limit int64) ([]FeedPushEvent, error) {
+	var res []FeedPushEvent
+	err := f.db.WithContext(ctx).Where("id = ? AND ctime < ?", id, timestamp).
+		Order("ctime desc").
+		Limit(int(limit)).
+		Find(&res).Error
+	return res, err
+}
+
+func (f *feedPushEventDao) FindPushEventsType(ctx context.Context, typ string, id int64, timestamp int64, limit int64) ([]FeedPushEvent, error) {
+	var res []FeedPushEvent
+	err := f.db.WithContext(ctx).
+		Where("id = ? AND type = ? AND ctime < ?", id, typ, timestamp).
+		Order("ctime decs").
+		Limit(int(limit)).Find(&res).Error
+	return res, err
 }
 
 // FeedPushEvent
