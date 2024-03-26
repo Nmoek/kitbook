@@ -61,6 +61,9 @@ services:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    command:
+      - "--web.enable-remote-write-receiver"
+      - "--config.file=/etc/prometheus/prometheus.yml"
 
 
   zipkin:
@@ -114,5 +117,8 @@ services:
       - kafka
     ports:
       - "11111:11111"
-
+  grafana:
+    image: grafana/grafana-enterprise:10.2.0
+    ports:
+      - 3000:3000
 
